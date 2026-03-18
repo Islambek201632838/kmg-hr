@@ -1,0 +1,46 @@
+services:
+
+  local-db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${LOCAL_DB_NAME}
+      POSTGRES_USER: ${LOCAL_DB_USER}
+      POSTGRES_PASSWORD: ${LOCAL_DB_PASSWORD}
+    volumes:
+      - local-pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: pg_isready -U ${LOCAL_DB_USER} -d ${LOCAL_DB_NAME}
+      interval: 5s
+      retries: 5
+
+  qdrant:
+    image: qdrant/qdrant:v1.12.1
+    volumes:
+      - qdrant-data:/qdrant/storage
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+
+  hr-api:
+    build: ./backend
+    env_file: .env
+    depends_on:
+      local-db:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    ports:
+      - "8001:8000"
+
+  hr-frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - hr-api
+
+volumes:
+  local-pgdata:
+  qdrant-data:
