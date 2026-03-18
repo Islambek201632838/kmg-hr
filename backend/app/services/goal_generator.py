@@ -134,7 +134,7 @@ async def generate_goals(
 
     prompt = GENERATE_PROMPT.format(count=needed) + "\n\n" + context_text
 
-    model = genai.GenerativeModel("gemini-3-flash-preview")
+    model = genai.GenerativeModel("gemini-2.0-flash")
     response = await model.generate_content_async(
         [{"role": "user", "parts": [prompt]}],
         generation_config=genai.GenerationConfig(

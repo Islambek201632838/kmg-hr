@@ -90,7 +90,7 @@ async def evaluate_goal(
         goal_text, position, department, manager_goals, kpis, historical_goals
     )
 
-    model = genai.GenerativeModel("gemini-3-flash-preview")
+    model = genai.GenerativeModel("gemini-2.0-flash")
     response = await model.generate_content_async(
         [
             {"role": "user", "parts": [SYSTEM_PROMPT + "\n\n" + user_prompt]},
