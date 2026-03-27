@@ -76,7 +76,7 @@ def s1():
         size=22, color=ACCENT, align=PP_ALIGN.CENTER)
     txt(s, "RAG + LLM  ·  FastAPI  ·  React  ·  Qdrant  ·  Gemini Flash",
         0.5, 3.45, 12.33, 0.55, size=15, color=rgb(0xCC,0xDD,0xFF), align=PP_ALIGN.CENTER)
-    txt(s, "Хакатон КМГ 2025  ·  Трек: Управление персоналом (HR)",
+    txt(s, "Хакатон КМГ 2025  ·  Трек: hr",
         0.5, 5.0, 12.33, 0.5, size=13, color=rgb(0x99,0xAA,0xCC),
         align=PP_ALIGN.CENTER, italic=True)
     pg(s, 1)
