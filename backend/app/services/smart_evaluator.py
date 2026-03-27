@@ -93,9 +93,9 @@ async def evaluate_goal(
 
     model = genai.GenerativeModel("gemini-2.0-flash")
 
-    # Retry with exponential backoff on 429 (rate limit)
-    last_exc = None
-    for attempt in range(4):
+    # Retry with exponential backoff on 429: 2→5→10→20→40 сек (~77 сек total)
+    delays = [2, 5, 10, 20, 40]
+    for attempt, delay in enumerate(delays):
         try:
             response = await model.generate_content_async(
                 [{"role": "user", "parts": [SYSTEM_PROMPT + "\n\n" + user_prompt]}],
@@ -106,9 +106,11 @@ async def evaluate_goal(
             )
             break
         except Exception as e:
-            last_exc = e
             if "429" in str(e) or "ResourceExhausted" in str(type(e).__name__):
-                await asyncio.sleep(1.5 ** attempt)
+                if attempt < len(delays) - 1:
+                    await asyncio.sleep(delay)
+                else:
+                    return _fallback_result()
             else:
                 return _fallback_result()
     else:

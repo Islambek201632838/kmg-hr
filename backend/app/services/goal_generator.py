@@ -142,7 +142,9 @@ async def generate_goals(
 
     model = genai.GenerativeModel("gemini-2.0-flash")
 
-    for attempt in range(4):
+    # Retry with exponential backoff on 429: 2→5→10→20→40 сек
+    delays = [2, 5, 10, 20, 40]
+    for attempt, delay in enumerate(delays):
         try:
             response = await model.generate_content_async(
                 [{"role": "user", "parts": [prompt]}],
@@ -154,8 +156,11 @@ async def generate_goals(
             break
         except Exception as e:
             if "429" in str(e) or "ResourceExhausted" in str(type(e).__name__):
-                log.warning(f"Gemini 429, retry {attempt+1}/4")
-                await asyncio.sleep(1.5 ** attempt)
+                log.warning(f"Gemini 429, retry {attempt+1}/{len(delays)}, wait {delay}s")
+                if attempt < len(delays) - 1:
+                    await asyncio.sleep(delay)
+                else:
+                    return {"goals": [], "context": _empty_context(kpis, manager_goals, rag_chunks), "warnings": ["Gemini перегружен (429). Повторите через минуту."]}
             else:
                 return {"goals": [], "context": _empty_context(kpis, manager_goals, rag_chunks), "warnings": ["Ошибка Gemini. Попробуйте снова."]}
     else:
