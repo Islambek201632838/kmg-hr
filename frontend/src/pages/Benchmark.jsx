@@ -17,19 +17,12 @@ function metricColor(key, value) {
 }
 
 export default function Benchmark() {
-  const [employees, setEmployees] = useState([]);
-  const [employeeId, setEmployeeId] = useState('');
+  const employeeId = 269;
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
 
-  const [loadingEmp, setLoadingEmp] = useState(true);
-  useEffect(() => {
-    api.get('/api/employees').then((r) => setEmployees(r.data)).catch(() => {}).finally(() => setLoadingEmp(false));
-  }, []);
-
   const handleRun = async () => {
-    if (!employeeId) return;
     setLoading(true);
     setError('');
     setData(null);
@@ -52,22 +45,15 @@ export default function Benchmark() {
   return (
     <Box>
       <Typography variant="h5" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '1.1rem', md: '1.5rem' } }}>Бенчмарк: корреляция с экспертной разметкой</Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
         10 эталонных целей разной степени качества оцениваются AI и сравниваются с экспертной оценкой.
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        Контекст: <b>Анастасия Воронцова</b> — Системный аналитик, Департамент управления данными и аналитики (ID: 269, Q3 2025)
       </Typography>
 
       <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-        <TextField
-          select label={loadingEmp ? 'Загрузка...' : 'Сотрудник'} value={employeeId} disabled={loadingEmp}
-          onChange={(e) => setEmployeeId(e.target.value)}
-          sx={{ minWidth: { xs: '100%', sm: 300 } }} size="small"
-          SelectProps={{ MenuProps: { PaperProps: { sx: { maxHeight: 300 } } } }}
-        >
-          {employees.map((emp) => (
-            <MenuItem key={emp.id} value={emp.id}>{emp.full_name} — {emp.position}</MenuItem>
-          ))}
-        </TextField>
-        <Button variant="contained" onClick={handleRun} disabled={loading || !employeeId} size="large">
+        <Button variant="contained" onClick={handleRun} disabled={loading} size="large">
           {loading ? <><CircularProgress size={20} color="inherit" sx={{ mr: 1 }} /> Оценка 10 целей...</> : 'Запустить бенчмарк'}
         </Button>
       </Box>

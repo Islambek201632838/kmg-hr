@@ -24,7 +24,7 @@ prs = Presentation()
 prs.slide_width  = Inches(13.33)
 prs.slide_height = Inches(7.5)
 BLANK = prs.slide_layouts[6]
-TOTAL = 19
+TOTAL = 20
 
 # ─── helpers ──────────────────────────────────────────────────────────────────
 def rect(slide, l, t, w, h, fill=DARK_BLUE):
@@ -564,7 +564,59 @@ s_optimizations()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# СЛАЙД 13 — ТИПЫ ЦЕЛЕЙ + СТРАТЕГИЧЕСКАЯ СВЯЗКА (бизнес)
+# СЛАЙД 13 — БЕНЧМАРК: AI vs экспертная разметка
+# ══════════════════════════════════════════════════════════════════════════════
+def s_benchmark():
+    s = prs.slides.add_slide(BLANK)
+    rect(s, 0, 0, 13.33, 7.5, LIGHT)
+    header(s, "Бенчмарк: AI vs экспертная разметка",
+           "Критерий хакатона: «корреляция с экспертной разметкой» (25%)")
+    accent_line(s)
+
+    # Left: what and why
+    rect(s, 0.3, 1.55, 6.2, 5.65, WHITE)
+    rect(s, 0.3, 1.55, 6.2, 0.45, DARK_BLUE)
+    txt(s, "Что и зачем", 0.5, 1.62, 5.8, 0.32, size=12, bold=True, color=WHITE)
+
+    items = [
+        ("Что", "10 эталонных целей разного качества — от «Улучшить работу» (0.15)\nдо «Сократить задержку ETL с 136 до 109 мин к 30.09.2025» (0.92)"),
+        ("Контекст", "Захардкожен: Анастасия Воронцова, Системный аналитик,\nДепартамент управления данными и аналитики (ID: 269, Q3 2025)"),
+        ("Зачем", "Критерий хакатона (25%): «Точность и обоснованность оценки,\nкорреляция с экспертной разметкой». Бенчмарк — прямое доказательство."),
+        ("Метрики", "MAE ~0.13 (ошибка ±0.13 по шкале 0–1) — хороший результат\nSpearman ~0.88 (AI ранжирует как эксперт в 88% случаев)"),
+    ]
+    for i, (label, body) in enumerate(items):
+        ty = 2.15 + i * 1.3
+        txt(s, label + ":", 0.45, ty, 1.3, 0.35, size=11, bold=True, color=DARK_BLUE)
+        txt(s, body, 1.7, ty, 4.6, 1.1, size=10, color=TEXT)
+
+    # Right: why not real experts
+    rect(s, 6.75, 1.55, 6.3, 5.65, WHITE)
+    rect(s, 6.75, 1.55, 6.3, 0.45, ORANGE)
+    txt(s, "Почему не экспертная разметка из БД?", 6.95, 1.62, 5.8, 0.32,
+        size=12, bold=True, color=WHITE)
+
+    reasons = [
+        (rgb(0xF4,0x43,0x36), "В remote DB нет числовых SMART-оценок",
+         "Таблица goal_reviews содержит verdict + комментарий руководителя,\nно не скоры по 5 критериям (S/M/A/R/T). Нечего сравнивать."),
+        (rgb(0xFF,0x98,0x00), "Нет экспертов для ручной разметки",
+         "Хакатон = 24 часа. Нет HR-экспертов, которые оценят 10 целей\nпо SMART вручную с числовыми скорами."),
+        (GREEN, "Решение: хардкод-датасет",
+         "10 целей с ручной экспертной оценкой (автор = разработчик).\nОт слабых (activity, 0.15) до сильных (impact, 0.95).\nВ продакшене — заменяется реальной разметкой HR."),
+        (MID_BLUE, "Пока AI оценивает AI — и вот почему",
+         "В БД нет эталонных SMART-скоров для сравнения.\nСоздали датасет вручную и валидируем Gemini по нему.\nПри внедрении подключается реальная экспертиза HR-специалистов."),
+    ]
+    for i, (color, title, body) in enumerate(reasons):
+        ty = 2.15 + i * 1.3
+        rect(s, 6.85, ty, 0.1, 1.1, color)
+        txt(s, title, 7.05, ty, 5.8, 0.35, size=11, bold=True, color=color)
+        txt(s, body, 7.05, ty + 0.38, 5.8, 0.7, size=10, color=TEXT)
+
+    pg(s, 13)
+s_benchmark()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# СЛАЙД 14 — ТИПЫ ЦЕЛЕЙ + СТРАТЕГИЧЕСКАЯ СВЯЗКА (бизнес)
 # ══════════════════════════════════════════════════════════════════════════════
 def s8b():
     s = prs.slides.add_slide(BLANK)
@@ -624,7 +676,7 @@ def s8b():
         txt(s, desc, 7.1, ty + 0.48, 5.6, 0.55, size=10, color=TEXT)
         txt(s, note, 7.1, ty + 1.1, 5.6, 0.4, size=10, color=color, italic=True)
 
-    pg(s, 13)
+    pg(s, 14)
 s8b()
 
 
@@ -690,7 +742,7 @@ def s9():
         ty = 4.56 + i * 0.38
         txt(s, f, 6.7,  ty, 2.5, 0.33, size=10, bold=True, color=GREEN, italic=True)
         txt(s, d, 9.25, ty, 3.6, 0.33, size=10, color=TEXT)
-    pg(s, 14)
+    pg(s, 15)
 s9()
 
 
@@ -763,7 +815,7 @@ def s10():
         size=11, bold=True, color=MID_BLUE, align=PP_ALIGN.CENTER)
     txt(s, "http://89.207.255.254:8001/docs", 10.2, 4.4, 2.8, 0.3,
         size=8, color=GRAY, align=PP_ALIGN.CENTER, italic=True)
-    pg(s, 15)
+    pg(s, 16)
 s10()
 
 
@@ -801,7 +853,7 @@ def s11():
         txt(s, func,     0.9,   ty+0.13, 3.9,  0.36, size=12, bold=True, color=DARK_BLUE)
         txt(s, endpoint, 5.0,   ty+0.13, 3.0,  0.36, size=11, color=MID_BLUE, italic=True)
         txt(s, detail,   8.2,   ty+0.13, 4.7,  0.36, size=11, color=TEXT)
-    pg(s, 16)
+    pg(s, 17)
 s11()
 
 
@@ -868,7 +920,7 @@ def s12():
     rect(s, 6.5, 5.9, 6.55, 0.38, ACCENT)
     txt(s, "🟡  Qdrant", 6.7, 5.95, 2.0, 0.28, size=11, bold=True, color=DARK_BLUE)
     txt(s, qdrant_items, 6.6, 6.37, 6.3, 0.7, size=10, color=TEXT)
-    pg(s, 17)
+    pg(s, 18)
 s12()
 
 
@@ -883,7 +935,7 @@ def s13():
 
     txt(s, "Запуск за 3 команды", 0.5, 0.2, 12.33, 0.65,
         size=26, bold=True, color=WHITE)
-    txt(s, "http://localhost:3000  ·  http://localhost:8001/docs",
+    txt(s, "http://89.207.255.254:3000  ·  http://89.207.255.254:8001/docs",
         0.5, 0.82, 12.33, 0.4, size=14, color=ACCENT, italic=True)
 
     commands = [
@@ -918,7 +970,7 @@ def s13():
         ty = 5.82 + row * 0.56
         txt(s, f"{icon}  {title}:", lx,     ty, 2.2,  0.44, size=11, bold=True, color=WHITE)
         txt(s, detail,              lx+2.2, ty, 4.2,  0.44, size=10.5, color=rgb(0xCC,0xDD,0xFF))
-    pg(s, 18)
+    pg(s, 19)
 s13()
 
 
@@ -953,10 +1005,10 @@ def s14():
         txt(s, title,                lx+0.15, ty+0.56, 3.6, 0.38, size=12, bold=True, color=WHITE)
         txt(s, detail,               lx+0.15, ty+0.96, 3.6, 0.76, size=10, color=rgb(0xAA,0xCC,0xFF))
 
-    txt(s, "Frontend: http://localhost:3000   ·   API: http://localhost:8001/docs",
+    txt(s, "Frontend: http://89.207.255.254:3000   ·   API: http://89.207.255.254:8001/docs",
         0.5, 6.9, 12.33, 0.38, size=12, color=rgb(0x99,0xBB,0xEE),
         align=PP_ALIGN.CENTER, italic=True)
-    pg(s, 19)
+    pg(s, 20)
 s14()
 
 
