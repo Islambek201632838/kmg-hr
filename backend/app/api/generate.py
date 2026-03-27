@@ -102,7 +102,7 @@ async def generate_goals_endpoint(
                         doc_title=ch["doc_title"],
                         doc_type=ch.get("doc_type", ""),
                         score=round(ch["score"], 3),
-                        text_preview=ch["text"][:200],
+                        text_preview=ch.get("text_preview", ch.get("text", "")[:200]),
                     ))
 
         goals.append(GeneratedGoal(
