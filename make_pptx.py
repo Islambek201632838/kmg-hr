@@ -24,7 +24,7 @@ prs = Presentation()
 prs.slide_width  = Inches(13.33)
 prs.slide_height = Inches(7.5)
 BLANK = prs.slide_layouts[6]
-TOTAL = 15
+TOTAL = 18
 
 # ─── helpers ──────────────────────────────────────────────────────────────────
 def rect(slide, l, t, w, h, fill=DARK_BLUE):
@@ -76,7 +76,7 @@ def s1():
         size=22, color=ACCENT, align=PP_ALIGN.CENTER)
     txt(s, "RAG + LLM  ·  FastAPI  ·  React  ·  Qdrant  ·  Gemini Flash",
         0.5, 3.45, 12.33, 0.55, size=15, color=rgb(0xCC,0xDD,0xFF), align=PP_ALIGN.CENTER)
-    txt(s, "Хакатон КМГ 2025  ·  Трек: hr",
+    txt(s, "Хакатон КМГ 2026  ·  Трек: Управление персоналом (HR)",
         0.5, 5.0, 12.33, 0.5, size=13, color=rgb(0x99,0xAA,0xCC),
         align=PP_ALIGN.CENTER, italic=True)
     pg(s, 1)
@@ -325,7 +325,105 @@ s6()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# СЛАЙД 7 — АРХИТЕКТУРА (технический)
+# СЛАЙД 7 — QR КОД + Навигация → Оценка → Рекомендации → Генерация
+# ══════════════════════════════════════════════════════════════════════════════
+def s_qr():
+    s = prs.slides.add_slide(BLANK)
+    rect(s, 0, 0, 13.33, 7.5, DARK_BLUE)
+    rect(s, 0, 6.2, 13.33, 0.18, ACCENT)
+
+    txt(s, "Попробуйте прямо сейчас", 0.5, 0.3, 12.33, 0.7,
+        size=34, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
+    txt(s, "Откройте камеру телефона и наведите на QR-код",
+        0.5, 1.05, 12.33, 0.45, size=15, color=ACCENT, align=PP_ALIGN.CENTER)
+
+    # QR code
+    try:
+        s.shapes.add_picture("screenshots/qr_demo.png",
+                             Inches(4.67), Inches(1.7), width=Inches(4.0), height=Inches(4.0))
+    except Exception:
+        rect(s, 4.67, 1.7, 4.0, 4.0, WHITE)
+
+    txt(s, "http://89.207.255.254:3000", 0.5, 5.85, 12.33, 0.45,
+        size=16, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
+    txt(s, "Оценка целей · AI-генерация · Дашборд · Бенчмарк",
+        0.5, 6.35, 12.33, 0.4, size=12, color=rgb(0xAA,0xCC,0xFF), align=PP_ALIGN.CENTER)
+    pg(s, 7)
+s_qr()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# СЛАЙД 8 — СКРИНШОТЫ: Навигация → Оценка → Рекомендации → Генерация → Карточка цели
+# ══════════════════════════════════════════════════════════════════════════════
+def s_screens1():
+    s = prs.slides.add_slide(BLANK)
+    rect(s, 0, 0, 13.33, 7.5, LIGHT)
+    header(s, "Мобильный интерфейс — навигация, оценка, генерация",
+           "Адаптивный дизайн: телефон · планшет · десктоп")
+    accent_line(s)
+
+    SDIR = "screenshots/"
+    screens = [
+        (SDIR + "s01_nav.png",        "1. Навигация",
+         "Бургер-меню (Drawer)\n6 страниц\nActive state подсветка"),
+        (SDIR + "s02_eval.png",       "2. Оценка цели",
+         "Выбор сотрудника, квартал, год\nФормулировка цели\nВалидация перед отправкой"),
+        (SDIR + "s03_eval_result.png", "3. Результат оценки",
+         "5 SMART-скоров (S/M/A/R/T)\nРекомендации по слабым\nПереформулировка + алерты"),
+        (SDIR + "s05_generate.png",    "4. AI-генерация",
+         "RAG: ВНД, KPI, релевантность\nSource_doc + source_quote\nПринятие выбранных целей"),
+        (SDIR + "s06_goal_card.png",   "5. Карточка цели",
+         "Rationale: почему эта цель\nMatched RAG-чанки с score\nТип: Output / Результат"),
+    ]
+    for i, (img_path, title, desc) in enumerate(screens):
+        lx = 0.2 + i * 2.6
+        try:
+            s.shapes.add_picture(img_path, Inches(lx), Inches(1.55), height=Inches(4.2))
+        except Exception:
+            rect(s, lx, 1.55, 2.3, 4.2, rgb(0xDD,0xDD,0xDD))
+        txt(s, title, lx, 5.85, 2.4, 0.4, size=10, bold=True, color=DARK_BLUE)
+        txt(s, desc,  lx, 6.25, 2.4, 1.0, size=9, color=TEXT)
+    pg(s, 8)
+s_screens1()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# СЛАЙД 8 — СКРИНШОТЫ: Пакетная → Дашборд → Подразделения → Команда → Бенчмарк
+# ══════════════════════════════════════════════════════════════════════════════
+def s_screens2():
+    s = prs.slides.add_slide(BLANK)
+    rect(s, 0, 0, 13.33, 7.5, LIGHT)
+    header(s, "Мобильный интерфейс — дашборд, аналитика, бенчмарк",
+           "Responsive: KPI-карточки, тренд, зрелость, валидация AI")
+    accent_line(s)
+
+    SDIR = "screenshots/"
+    screens = [
+        (SDIR + "s04_batch.png",       "6. Пакетная оценка",
+         "Все цели за квартал\nRadar-профиль SMART\nАлерты: вес, тип, связка"),
+        (SDIR + "s07_dashboard.png",   "7. Дашборд: KPI",
+         "Средний SMART: 0.63\n8 подразделений, 4500 целей\nЦветовая индикация"),
+        (SDIR + "s08_dash_detail.png", "8. Подразделения",
+         "Бар-чарт с цветовой шкалой\nКлик → квартальный тренд\nStrategic ratio"),
+        (SDIR + "s09_team.png",        "9. Зрелость команды",
+         "Maturity index: 0.51\nSMART-качество + стратегия\nРекомендации руководителю"),
+        (SDIR + "s11_benchmark.png",   "10. Бенчмарк AI",
+         "MAE: 0.117 (отлично)\nСпирмен: 0.939 (сильная)\nТочность типа: 70%"),
+    ]
+    for i, (img_path, title, desc) in enumerate(screens):
+        lx = 0.2 + i * 2.6
+        try:
+            s.shapes.add_picture(img_path, Inches(lx), Inches(1.55), height=Inches(4.2))
+        except Exception:
+            rect(s, lx, 1.55, 2.3, 4.2, rgb(0xDD,0xDD,0xDD))
+        txt(s, title, lx, 5.85, 2.4, 0.4, size=10, bold=True, color=DARK_BLUE)
+        txt(s, desc,  lx, 6.25, 2.4, 1.0, size=9, color=TEXT)
+    pg(s, 9)
+s_screens2()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# СЛАЙД 9 — АРХИТЕКТУРА (технический)
 # ══════════════════════════════════════════════════════════════════════════════
 def s7():
     s = prs.slides.add_slide(BLANK)
@@ -334,37 +432,41 @@ def s7():
     accent_line(s)
 
     layers = [
-        (DARK_BLUE, "СЛОЙ 3 — ПРЕДСТАВЛЕНИЕ",
+        (DARK_BLUE, "⚛️", "СЛОЙ 3 — ПРЕДСТАВЛЕНИЕ",
          "React 18 + Material UI",
-         "EvaluateGoal  ·  MyGoals (batch)  ·  GenerateGoals  ·  Dashboard\nSmartScoreCard  ·  GoalCard  ·  AlertBanner  ·  Recharts"),
-        (MID_BLUE,  "СЛОЙ 2 — AI / БИЗНЕС-ЛОГИКА",
-         "FastAPI · Python 3.11",
-         "smart_evaluator.py  ·  goal_generator.py  ·  rag_pipeline.py\nalert_manager.py (F-16..F-21)  ·  dedup_checker.py"),
-        (rgb(0x2E,0x7D,0x32), "СЛОЙ 1 — ДАННЫЕ",
-         "PostgreSQL 17 × 2  +  Qdrant",
-         "Remote DB (readonly): 450 сотр., 9000 целей, 160 ВНД, KPI\nLocal DB (Alembic): ai_evaluations, ai_generated_goals, accepted_goals\nQdrant: 412 чанков, paraphrase-MiniLM-L12-v2, 384d cosine"),
+         "6 страниц: EvaluateGoal · MyGoals (batch) · GenerateGoals · Dashboard · Team · Benchmark\nКомпоненты: SmartScoreCard · GoalCard · AlertBanner · Recharts (Radar, Line, Bar)\nАдаптив: mobile drawer, responsive cards, form validation"),
+        (MID_BLUE, "🤖", "СЛОЙ 2 — AI / БИЗНЕС-ЛОГИКА",
+         "FastAPI · Python 3.11 · Async",
+         "smart_evaluator.py — Gemini Flash JSON mode, 5 SMART-скоров, retry 429\ngoal_generator.py — RAG + LLM, rationale, auto-reformulation\nrag_pipeline.py — Qdrant search, dept filter, source grounding\nalert_manager.py — F-16..F-21 алерты · dedup_checker.py — cosine 0.85"),
+        (rgb(0x2E,0x7D,0x32), "🗄️", "СЛОЙ 1 — ДАННЫЕ",
+         "PostgreSQL 17 × 2 + Qdrant",
+         "Remote DB (readonly): 450 сотр., 9 000 целей, 160 ВНД, 13 KPI-метрик\nLocal DB (Alembic): ai_evaluations, ai_generated_goals, accepted_goals\nQdrant: 412 чанков, paraphrase-MiniLM-L12-v2, 384d cosine · dept_scope filter"),
     ]
 
-    for i, (color, tag, sub, body) in enumerate(layers):
+    for i, (color, icon, tag, sub, body) in enumerate(layers):
         ty = 1.55 + i * 1.9
         rect(s, 0.3, ty, 12.73, 1.78, color)
-        txt(s, tag, 0.5, ty+0.1, 6.0, 0.38, size=11, bold=True, color=ACCENT)
-        txt(s, sub, 0.5, ty+0.5, 4.0, 0.45, size=15, bold=True, color=WHITE)
-        txt(s, body, 4.8, ty+0.3, 8.0, 1.3, size=11, color=rgb(0xCC,0xDD,0xFF))
+        # Left icon
+        txt(s, icon, 0.4, ty+0.35, 0.6, 0.6, size=28, color=WHITE)
+        txt(s, tag, 1.1, ty+0.1, 5.0, 0.38, size=12, bold=True, color=ACCENT)
+        txt(s, sub, 1.1, ty+0.48, 3.5, 0.4, size=14, bold=True, color=WHITE)
+        txt(s, body, 4.8, ty+0.15, 8.0, 1.5, size=11, color=rgb(0xCC,0xDD,0xFF))
         if i < 2:
-            txt(s, "↕", 6.37, ty+1.8, 0.6, 0.4,
-                size=18, bold=True, color=ACCENT, align=PP_ALIGN.CENTER)
+            # Arrow between layers
+            rect(s, 6.1, ty+1.78, 1.0, 0.12, ACCENT)
+            txt(s, "REST API (JSON)" if i == 0 else "SQLAlchemy async + Qdrant",
+                4.5, ty+1.78, 4.5, 0.12, size=8, color=ACCENT, align=PP_ALIGN.CENTER)
 
     # Docker label
     rect(s, 0.3, 7.05, 12.73, 0.3, rgb(0x0D,0x1B,0x3E))
     txt(s, "🐳  local-db : 5433    qdrant : 6333    hr-api : 8001    hr-frontend : 3000",
         0.5, 7.06, 12.0, 0.25, size=11, color=rgb(0x99,0xCC,0xFF))
-    pg(s, 7)
+    pg(s, 10)
 s7()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# СЛАЙД 8 — SMART EVALUATOR (технический)
+# СЛАЙД 10 — SMART EVALUATOR (технический)
 # ══════════════════════════════════════════════════════════════════════════════
 def s8():
     s = prs.slides.add_slide(BLANK)
@@ -419,12 +521,12 @@ def s8():
 
     txt(s, "📦  evaluate-batch: asyncio.gather(*[evaluate_goal(...) for goal in goals])",
         0.35, 7.1, 12.5, 0.32, size=10.5, color=MID_BLUE, italic=True)
-    pg(s, 8)
+    pg(s, 11)
 s8()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# СЛАЙД 8.5 — ТИПЫ ЦЕЛЕЙ + СТРАТЕГИЧЕСКАЯ СВЯЗКА (бизнес)
+# СЛАЙД 11 — ТИПЫ ЦЕЛЕЙ + СТРАТЕГИЧЕСКАЯ СВЯЗКА (бизнес)
 # ══════════════════════════════════════════════════════════════════════════════
 def s8b():
     s = prs.slides.add_slide(BLANK)
@@ -484,12 +586,12 @@ def s8b():
         txt(s, desc, 7.1, ty + 0.48, 5.6, 0.55, size=10, color=TEXT)
         txt(s, note, 7.1, ty + 1.1, 5.6, 0.4, size=10, color=color, italic=True)
 
-    pg(s, 9)
+    pg(s, 12)
 s8b()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# СЛАЙД 10 — RAG PIPELINE (технический)
+# СЛАЙД 12 — RAG PIPELINE (технический)
 # ══════════════════════════════════════════════════════════════════════════════
 def s9():
     s = prs.slides.add_slide(BLANK)
@@ -550,12 +652,12 @@ def s9():
         ty = 4.56 + i * 0.38
         txt(s, f, 6.7,  ty, 2.5, 0.33, size=10, bold=True, color=GREEN, italic=True)
         txt(s, d, 9.25, ty, 3.6, 0.33, size=10, color=TEXT)
-    pg(s, 10)
+    pg(s, 13)
 s9()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# СЛАЙД 10 — API ENDPOINTS (технический)
+# СЛАЙД 13 — API ENDPOINTS (технический)
 # ══════════════════════════════════════════════════════════════════════════════
 def s10():
     s = prs.slides.add_slide(BLANK)
@@ -564,42 +666,71 @@ def s10():
            "FastAPI · OpenAPI /docs · Pydantic v2 · Field(description) · Async SQLAlchemy")
     accent_line(s)
 
-    endpoints = [
-        ("POST", "/api/evaluate-goal",              GREEN,     "Оценить одну цель по SMART · 5 критериев · алерты F-16..F-21"),
-        ("POST", "/api/evaluate-batch",             GREEN,     "Пакетная оценка всех целей сотрудника · asyncio.gather · radar-data"),
-        ("POST", "/api/generate-goals",             GREEN,     "AI-генерация 3–5 целей · RAG + Gemini · dedup · source_grounding"),
-        ("POST", "/api/accept-goals",               GREEN,     "Принять выбранные цели · сохранить в accepted_goals (F-13)"),
-        ("GET",  "/api/dashboard/department-quality",MID_BLUE, "SMART-индекс по подразделениям · strategic_ratio · weakest_criterion"),
-        ("GET",  "/api/dashboard/quarterly-trend",  MID_BLUE,  "Квартальная динамика · criterion_scores для RadarChart"),
-        ("GET",  "/api/dashboard/maturity",         MID_BLUE,  "Индекс зрелости подразделения F-22 · breakdown · recommendations"),
-        ("GET",  "/api/employees",                  MID_BLUE,  "Список сотрудников с кол-вом целей"),
-        ("GET",  "/health",                         GRAY,      "Health-check"),
+    # POST group
+    post_eps = [
+        ("/api/evaluate-goal",    "Оценить одну цель по SMART · 5 критериев · алерты F-16..F-21"),
+        ("/api/evaluate-batch",   "Пакетная оценка всех целей сотрудника · asyncio.gather · radar"),
+        ("/api/generate-goals",   "AI-генерация 3–5 целей · RAG + Gemini · dedup · grounding"),
+        ("/api/accept-goals",     "Принять выбранные цели · сохранить в accepted_goals (F-13)"),
+    ]
+    # GET group
+    get_eps = [
+        ("/api/dashboard/department-quality", "SMART-индекс по подразделениям · strategic_ratio · weakest"),
+        ("/api/dashboard/quarterly-trend",    "Квартальная динамика · criterion_scores для RadarChart"),
+        ("/api/dashboard/maturity",           "Индекс зрелости подразделения F-22 · recommendations"),
+        ("/api/employees",                    "Список сотрудников с кол-вом целей (кеш 5 мин)"),
+        ("/health",                           "Health-check"),
     ]
 
-    rect(s, 0.3, 1.55, 12.73, 0.42, DARK_BLUE)
-    txt(s, "Метод", 0.4,  1.6, 0.82, 0.3, size=11, bold=True, color=WHITE)
-    txt(s, "Эндпоинт", 1.32, 1.6, 4.7, 0.3, size=11, bold=True, color=WHITE)
-    txt(s, "Описание",  6.15, 1.6, 7.0, 0.3, size=11, bold=True, color=WHITE)
+    # POST header
+    rect(s, 0.3, 1.55, 12.73, 0.38, GREEN)
+    txt(s, "POST — запись / AI-обработка", 0.5, 1.58, 6.0, 0.3, size=11, bold=True, color=WHITE)
+    txt(s, "Эндпоинт", 1.32, 1.58, 4.7, 0.3, size=11, bold=True, color=WHITE)
+    txt(s, "Описание",  6.15, 1.58, 7.0, 0.3, size=11, bold=True, color=WHITE)
 
-    for i, (method, path, mcolor, desc) in enumerate(endpoints):
-        ty = 2.02 + i * 0.56
-        bg = WHITE if i % 2 == 0 else rgb(0xF5,0xF8,0xFF)
-        rect(s, 0.3, ty, 12.73, 0.52, bg)
-        mbg = GREEN_LT if method == "POST" else rgb(0xE3,0xF2,0xFD)
-        rect(s, 0.38, ty+0.07, 0.8, 0.36, mbg)
-        txt(s, method, 0.38, ty+0.08, 0.8, 0.34,
-            size=10, bold=True, color=mcolor, align=PP_ALIGN.CENTER)
-        txt(s, path,   1.32, ty+0.1, 4.7, 0.34, size=11, bold=True, color=MID_BLUE, italic=True)
-        txt(s, desc,   6.15, ty+0.1, 6.9, 0.34, size=11, color=TEXT)
+    for i, (path, desc) in enumerate(post_eps):
+        ty = 1.98 + i * 0.5
+        bg = GREEN_LT if i % 2 == 0 else WHITE
+        rect(s, 0.3, ty, 12.73, 0.46, bg)
+        rect(s, 0.38, ty+0.05, 0.72, 0.34, GREEN_LT)
+        txt(s, "POST", 0.38, ty+0.06, 0.72, 0.32, size=9, bold=True, color=GREEN, align=PP_ALIGN.CENTER)
+        txt(s, path, 1.22, ty+0.07, 4.7, 0.32, size=10.5, bold=True, color=GREEN, italic=True)
+        txt(s, desc, 6.15, ty+0.07, 6.9, 0.32, size=10.5, color=TEXT)
 
-    txt(s, "📖  Swagger UI: http://localhost:8001/docs   ·   ReDoc: http://localhost:8001/redoc",
-        0.35, 7.12, 12.0, 0.3, size=11, color=MID_BLUE, italic=True)
-    pg(s, 11)
+    # Separator
+    sep_y = 1.98 + len(post_eps) * 0.5 + 0.08
+    rect(s, 0.3, sep_y, 12.73, 0.02, ACCENT)
+
+    # GET header
+    get_header_y = sep_y + 0.1
+    rect(s, 0.3, get_header_y, 12.73, 0.38, MID_BLUE)
+    txt(s, "GET — чтение / аналитика", 0.5, get_header_y+0.03, 6.0, 0.3, size=11, bold=True, color=WHITE)
+
+    for i, (path, desc) in enumerate(get_eps):
+        ty = get_header_y + 0.42 + i * 0.5
+        bg = rgb(0xE3,0xF2,0xFD) if i % 2 == 0 else WHITE
+        rect(s, 0.3, ty, 12.73, 0.46, bg)
+        rect(s, 0.38, ty+0.05, 0.72, 0.34, rgb(0xE3,0xF2,0xFD))
+        txt(s, "GET", 0.38, ty+0.06, 0.72, 0.32, size=9, bold=True, color=MID_BLUE, align=PP_ALIGN.CENTER)
+        txt(s, path, 1.22, ty+0.07, 4.7, 0.32, size=10.5, bold=True, color=MID_BLUE, italic=True)
+        txt(s, desc, 6.15, ty+0.07, 6.9, 0.32, size=10.5, color=TEXT)
+
+    # QR code for Swagger docs
+    try:
+        s.shapes.add_picture("screenshots/qr_docs.png",
+                             Inches(10.5), Inches(1.55), width=Inches(2.5), height=Inches(2.5))
+    except Exception:
+        pass
+    txt(s, "Swagger UI", 10.5, 4.1, 2.5, 0.3,
+        size=11, bold=True, color=MID_BLUE, align=PP_ALIGN.CENTER)
+    txt(s, "http://89.207.255.254:8001/docs", 10.2, 4.4, 2.8, 0.3,
+        size=8, color=GRAY, align=PP_ALIGN.CENTER, italic=True)
+    pg(s, 14)
 s10()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# СЛАЙД 11 — MVP ТАБЛИЦА (смешанный)
+# СЛАЙД 14 — MVP ТАБЛИЦА (смешанный)
 # ══════════════════════════════════════════════════════════════════════════════
 def s11():
     s = prs.slides.add_slide(BLANK)
@@ -632,12 +763,12 @@ def s11():
         txt(s, func,     0.9,   ty+0.13, 3.9,  0.36, size=12, bold=True, color=DARK_BLUE)
         txt(s, endpoint, 5.0,   ty+0.13, 3.0,  0.36, size=11, color=MID_BLUE, italic=True)
         txt(s, detail,   8.2,   ty+0.13, 4.7,  0.36, size=11, color=TEXT)
-    pg(s, 12)
+    pg(s, 15)
 s11()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# СЛАЙД 12 — ДАННЫЕ (технический / бизнес)
+# СЛАЙД 15 — ДАННЫЕ (технический / бизнес)
 # ══════════════════════════════════════════════════════════════════════════════
 def s12():
     s = prs.slides.add_slide(BLANK)
@@ -699,12 +830,12 @@ def s12():
     rect(s, 6.5, 5.9, 6.55, 0.38, ACCENT)
     txt(s, "🟡  Qdrant", 6.7, 5.95, 2.0, 0.28, size=11, bold=True, color=DARK_BLUE)
     txt(s, qdrant_items, 6.6, 6.37, 6.3, 0.7, size=10, color=TEXT)
-    pg(s, 13)
+    pg(s, 16)
 s12()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# СЛАЙД 13 — ЗАПУСК (технический)
+# СЛАЙД 16 — ЗАПУСК (технический)
 # ══════════════════════════════════════════════════════════════════════════════
 def s13():
     s = prs.slides.add_slide(BLANK)
@@ -749,12 +880,12 @@ def s13():
         ty = 5.82 + row * 0.56
         txt(s, f"{icon}  {title}:", lx,     ty, 2.2,  0.44, size=11, bold=True, color=WHITE)
         txt(s, detail,              lx+2.2, ty, 4.2,  0.44, size=10.5, color=rgb(0xCC,0xDD,0xFF))
-    pg(s, 14)
+    pg(s, 17)
 s13()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# СЛАЙД 14 — ИТОГ / СПАСИБО
+# СЛАЙД 17 — ИТОГ / СПАСИБО
 # ══════════════════════════════════════════════════════════════════════════════
 def s14():
     s = prs.slides.add_slide(BLANK)
@@ -787,7 +918,7 @@ def s14():
     txt(s, "Frontend: http://localhost:3000   ·   API: http://localhost:8001/docs",
         0.5, 6.9, 12.33, 0.38, size=12, color=rgb(0x99,0xBB,0xEE),
         align=PP_ALIGN.CENTER, italic=True)
-    pg(s, 15)
+    pg(s, 18)
 s14()
 
 

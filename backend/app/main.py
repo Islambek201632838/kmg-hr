@@ -64,6 +64,7 @@ app = FastAPI(
     contact={"name": "KMG Digital", "email": "digital@kmg.kz"},
     openapi_tags=tags_metadata,
     lifespan=lifespan,
+    redoc_url=None,
 )
 
 app.add_middleware(
