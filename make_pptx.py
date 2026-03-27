@@ -24,7 +24,7 @@ prs = Presentation()
 prs.slide_width  = Inches(13.33)
 prs.slide_height = Inches(7.5)
 BLANK = prs.slide_layouts[6]
-TOTAL = 14
+TOTAL = 15
 
 # ─── helpers ──────────────────────────────────────────────────────────────────
 def rect(slide, l, t, w, h, fill=DARK_BLUE):
@@ -424,7 +424,72 @@ s8()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# СЛАЙД 9 — RAG PIPELINE (технический)
+# СЛАЙД 8.5 — ТИПЫ ЦЕЛЕЙ + СТРАТЕГИЧЕСКАЯ СВЯЗКА (бизнес)
+# ══════════════════════════════════════════════════════════════════════════════
+def s8b():
+    s = prs.slides.add_slide(BLANK)
+    rect(s, 0, 0, 13.33, 7.5, LIGHT)
+    header(s, "Классификация целей", "F-19: тип цели  ·  F-17: стратегическая связка")
+    accent_line(s)
+
+    # Left: Goal types (F-19)
+    rect(s, 0.3, 1.55, 6.2, 5.65, WHITE)
+    rect(s, 0.3, 1.55, 6.2, 0.5, DARK_BLUE)
+    txt(s, "Тип цели  (F-19: goal_type)", 0.5, 1.62, 5.8, 0.35,
+        size=13, bold=True, color=WHITE)
+
+    types = [
+        (rgb(0xF4,0x43,0x36), "activity", "Действие / процесс",
+         "«Проводить еженедельные совещания»",
+         "Слабый — нет измеримого результата.\nСистема предлагает переформулировку."),
+        (rgb(0xFF,0x98,0x00), "output", "Конкретный результат",
+         "«Снизить дефекты после релиза на 20% к 30.09.2025»",
+         "Хороший — есть метрика и срок."),
+        (GREEN, "impact", "Влияние на бизнес",
+         "«Увеличить индекс качества данных на 5%,\n  сократив потери от ошибок на 2 млн ₸»",
+         "Лучший — связь с бизнес-результатом."),
+    ]
+    for i, (color, code, title, example, quality) in enumerate(types):
+        ty = 2.2 + i * 1.75
+        rect(s, 0.4, ty, 5.9, 1.6, rgb(0xF9,0xFB,0xFF) if i % 2 == 0 else WHITE)
+        rect(s, 0.4, ty, 0.12, 1.6, color)
+        txt(s, code, 0.65, ty + 0.08, 1.2, 0.35, size=12, bold=True, color=color, italic=True)
+        txt(s, "— " + title, 1.75, ty + 0.08, 4.3, 0.35, size=12, bold=True, color=TEXT)
+        txt(s, example, 0.65, ty + 0.48, 5.5, 0.55, size=10, color=TEXT, italic=True)
+        txt(s, quality, 0.65, ty + 1.05, 5.5, 0.5, size=10, color=color)
+
+    # Right: Strategic alignment (F-17)
+    rect(s, 6.75, 1.55, 6.3, 5.65, WHITE)
+    rect(s, 6.75, 1.55, 6.3, 0.5, MID_BLUE)
+    txt(s, "Стратегическая связка  (F-17)", 6.95, 1.62, 5.8, 0.35,
+        size=13, bold=True, color=WHITE)
+
+    levels = [
+        (GREEN, "strategic", "Стратегия компании",
+         "Связана со стратегическим документом\nили KPI верхнего уровня",
+         "Идеальный уровень привязки"),
+        (rgb(0xFF,0x98,0x00), "functional", "Функция подразделения",
+         "Связана с KPI подразделения\nили целью прямого руководителя",
+         "Допустимый уровень"),
+        (rgb(0xF4,0x43,0x36), "operational", "Операционная задача",
+         "Нет явной связи со стратегией\nили KPI подразделения",
+         "Система выдаёт предупреждение F-17"),
+    ]
+    for i, (color, code, title, desc, note) in enumerate(levels):
+        ty = 2.2 + i * 1.75
+        rect(s, 6.85, ty, 6.05, 1.6, rgb(0xF9,0xFB,0xFF) if i % 2 == 0 else WHITE)
+        rect(s, 6.85, ty, 0.12, 1.6, color)
+        txt(s, code, 7.1, ty + 0.08, 1.5, 0.35, size=12, bold=True, color=color, italic=True)
+        txt(s, "— " + title, 8.55, ty + 0.08, 4.1, 0.35, size=12, bold=True, color=TEXT)
+        txt(s, desc, 7.1, ty + 0.48, 5.6, 0.55, size=10, color=TEXT)
+        txt(s, note, 7.1, ty + 1.1, 5.6, 0.4, size=10, color=color, italic=True)
+
+    pg(s, 9)
+s8b()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# СЛАЙД 10 — RAG PIPELINE (технический)
 # ══════════════════════════════════════════════════════════════════════════════
 def s9():
     s = prs.slides.add_slide(BLANK)
@@ -485,7 +550,7 @@ def s9():
         ty = 4.56 + i * 0.38
         txt(s, f, 6.7,  ty, 2.5, 0.33, size=10, bold=True, color=GREEN, italic=True)
         txt(s, d, 9.25, ty, 3.6, 0.33, size=10, color=TEXT)
-    pg(s, 9)
+    pg(s, 10)
 s9()
 
 
@@ -529,7 +594,7 @@ def s10():
 
     txt(s, "📖  Swagger UI: http://localhost:8001/docs   ·   ReDoc: http://localhost:8001/redoc",
         0.35, 7.12, 12.0, 0.3, size=11, color=MID_BLUE, italic=True)
-    pg(s, 10)
+    pg(s, 11)
 s10()
 
 
@@ -567,7 +632,7 @@ def s11():
         txt(s, func,     0.9,   ty+0.13, 3.9,  0.36, size=12, bold=True, color=DARK_BLUE)
         txt(s, endpoint, 5.0,   ty+0.13, 3.0,  0.36, size=11, color=MID_BLUE, italic=True)
         txt(s, detail,   8.2,   ty+0.13, 4.7,  0.36, size=11, color=TEXT)
-    pg(s, 11)
+    pg(s, 12)
 s11()
 
 
@@ -634,7 +699,7 @@ def s12():
     rect(s, 6.5, 5.9, 6.55, 0.38, ACCENT)
     txt(s, "🟡  Qdrant", 6.7, 5.95, 2.0, 0.28, size=11, bold=True, color=DARK_BLUE)
     txt(s, qdrant_items, 6.6, 6.37, 6.3, 0.7, size=10, color=TEXT)
-    pg(s, 12)
+    pg(s, 13)
 s12()
 
 
@@ -684,7 +749,7 @@ def s13():
         ty = 5.82 + row * 0.56
         txt(s, f"{icon}  {title}:", lx,     ty, 2.2,  0.44, size=11, bold=True, color=WHITE)
         txt(s, detail,              lx+2.2, ty, 4.2,  0.44, size=10.5, color=rgb(0xCC,0xDD,0xFF))
-    pg(s, 13)
+    pg(s, 14)
 s13()
 
 
@@ -722,7 +787,7 @@ def s14():
     txt(s, "Frontend: http://localhost:3000   ·   API: http://localhost:8001/docs",
         0.5, 6.9, 12.33, 0.38, size=12, color=rgb(0x99,0xBB,0xEE),
         align=PP_ALIGN.CENTER, italic=True)
-    pg(s, 14)
+    pg(s, 15)
 s14()
 
 

@@ -5,23 +5,23 @@ import api from '../api/client';
 import AlertBanner from '../components/AlertBanner';
 
 const GOAL_TYPE_LABELS = {
-  activity: 'Активность',
-  output: 'Результат',
-  impact: 'Влияние на бизнес',
+  activity: 'Activity / Активность',
+  output: 'Output / Результат',
+  impact: 'Impact / Влияние на бизнес',
 };
 
 const ALIGN_LABELS = {
-  strategic: 'Стратегическая',
-  functional: 'Функциональная',
-  operational: 'Операционная',
+  strategic: 'Strategic / Стратегическая',
+  functional: 'Functional / Функциональная',
+  operational: 'Operational / Операционная',
 };
 
 const CRITERION_LABELS = {
-  specific: 'Конкретность',
-  measurable: 'Измеримость',
-  achievable: 'Достижимость',
-  relevant: 'Релевантность',
-  time_bound: 'Сроки',
+  specific: 'Specific / Конкретность',
+  measurable: 'Measurable / Измеримость',
+  achievable: 'Achievable / Достижимость',
+  relevant: 'Relevant / Релевантность',
+  time_bound: 'Time-bound / Сроки',
 };
 
 export default function MyGoals() {
@@ -32,13 +32,20 @@ export default function MyGoals() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
+  const [touched, setTouched] = useState({});
+  const [loadingEmp, setLoadingEmp] = useState(true);
 
   useEffect(() => {
-    api.get('/api/employees').then((r) => setEmployees(r.data)).catch(() => {});
+    api.get('/api/employees').then((r) => setEmployees(r.data)).catch(() => {}).finally(() => setLoadingEmp(false));
   }, []);
 
+  const errs = {};
+  if (!employeeId) errs.employeeId = 'Выберите сотрудника';
+  if (year < 2020 || year > 2030) errs.year = 'Год от 2020 до 2030';
+
   const handleEvaluate = async () => {
-    if (!employeeId) return;
+    setTouched({ employeeId: true, year: true });
+    if (!employeeId || year < 2020 || year > 2030) return;
     setLoading(true);
     setError('');
     setResult(null);
@@ -58,23 +65,33 @@ export default function MyGoals() {
 
   return (
     <Box>
-      <Typography variant="h5" fontWeight={700} gutterBottom>Мои цели — пакетная оценка</Typography>
+      <Typography variant="h5" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '1.2rem', md: '1.5rem' } }}>
+        Мои цели — пакетная оценка
+      </Typography>
 
       <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
         <TextField
-          select label="Сотрудник" value={employeeId}
-          onChange={(e) => setEmployeeId(e.target.value)}
-          sx={{ minWidth: 300 }} size="small"
+          select label={loadingEmp ? 'Загрузка...' : 'Сотрудник'} value={employeeId} disabled={loadingEmp}
+          onChange={(e) => { setEmployeeId(e.target.value); setTouched(p => ({ ...p, employeeId: true })); }}
+          sx={{ minWidth: { xs: '100%', sm: 300 } }} size="small"
+          error={touched.employeeId && !!errs.employeeId}
+          helperText={touched.employeeId && errs.employeeId}
+          SelectProps={{ MenuProps: { PaperProps: { sx: { maxHeight: 300 } } } }}
         >
           {employees.map((emp) => (
-            <MenuItem key={emp.id} value={emp.id}>{emp.full_name} — {emp.position}</MenuItem>
+            <MenuItem key={emp.id} value={emp.id} sx={{ whiteSpace: 'normal', fontSize: '0.85rem' }}>{emp.full_name} — {emp.position}</MenuItem>
           ))}
         </TextField>
         <TextField select label="Квартал" value={quarter} onChange={(e) => setQuarter(e.target.value)} size="small" sx={{ width: 120 }}>
           {['Q1', 'Q2', 'Q3', 'Q4'].map((q) => <MenuItem key={q} value={q}>{q}</MenuItem>)}
         </TextField>
-        <TextField label="Год" type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} size="small" sx={{ width: 100 }} />
-        <Button variant="contained" onClick={handleEvaluate} disabled={loading || !employeeId}>
+        <TextField label="Год" type="number" value={year}
+          onChange={(e) => { setYear(Number(e.target.value)); setTouched(p => ({ ...p, year: true })); }}
+          size="small" sx={{ width: 100 }}
+          error={touched.year && !!errs.year}
+          helperText={touched.year && errs.year}
+        />
+        <Button variant="contained" onClick={handleEvaluate} disabled={loading}>
           {loading ? <CircularProgress size={24} color="inherit" /> : 'Оценить все цели'}
         </Button>
       </Box>
@@ -85,12 +102,14 @@ export default function MyGoals() {
         <>
           <Card variant="outlined" sx={{ mb: 2, bgcolor: '#f5f8ff' }}>
             <CardContent>
-              <Typography variant="h6">{result.employee_name} — {result.department}</Typography>
-              <Stack direction="row" spacing={2} sx={{ mt: 1 }} flexWrap="wrap">
-                <Chip label={`Средний индекс: ${result.summary.avg_index}`} color={result.summary.avg_index >= 0.7 ? 'success' : 'warning'} />
-                <Chip label={`Целей: ${result.summary.total_goals}`} variant="outlined" />
-                <Chip label={`Вес: ${result.summary.total_weight}%`} variant="outlined" />
-                <Chip label={`Слабый критерий: ${CRITERION_LABELS[result.summary.weakest_criterion] || result.summary.weakest_criterion}`} color="error" variant="outlined" />
+              <Typography variant="h6" sx={{ fontSize: { xs: '0.95rem', md: '1.25rem' }, wordBreak: 'break-word' }}>
+                {result.employee_name} — {result.department}
+              </Typography>
+              <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap', gap: 0.5 }}>
+                <Chip label={`Индекс: ${result.summary.avg_index}`} color={result.summary.avg_index >= 0.7 ? 'success' : 'warning'} size="small" />
+                <Chip label={`Целей: ${result.summary.total_goals}`} variant="outlined" size="small" />
+                <Chip label={`Вес: ${result.summary.total_weight}%`} variant="outlined" size="small" />
+                <Chip label={`Слабый: ${CRITERION_LABELS[result.summary.weakest_criterion] || result.summary.weakest_criterion}`} color="error" variant="outlined" size="small" />
               </Stack>
               <AlertBanner warnings={result.summary.warnings} />
             </CardContent>
@@ -103,9 +122,9 @@ export default function MyGoals() {
               return { criterion: CRITERION_LABELS[k], score: evals.length ? +(evals.reduce((a,b)=>a+b,0)/evals.length).toFixed(2) : 0 };
             });
             return (
-              <Card variant="outlined" sx={{ mb: 2, p: 1 }}>
-                <Typography variant="subtitle2" sx={{ px: 1, pt: 0.5 }}>Профиль SMART (все цели)</Typography>
-                <ResponsiveContainer width="100%" height={200}>
+              <Card variant="outlined" sx={{ mb: 2, p: { xs: 1, md: 2 } }}>
+                <Typography variant="subtitle1" fontWeight={600} sx={{ px: 1 }}>Профиль SMART (все цели)</Typography>
+                <ResponsiveContainer width="100%" height={250}>
                   <RadarChart data={avgScores}>
                     <PolarGrid />
                     <PolarAngleAxis dataKey="criterion" tick={{ fontSize: 11 }} />
@@ -117,11 +136,16 @@ export default function MyGoals() {
           })()}
 
           {result.goals.map((g) => (
-            <Card key={g.goal_id} variant="outlined" sx={{ mb: 1 }}>
+            <Card key={g.goal_id} variant="outlined" sx={{
+              mb: 1.5,
+              borderLeft: `4px solid ${g.overall_index >= 0.7 ? '#4caf50' : g.overall_index >= 0.5 ? '#ff9800' : '#f44336'}`,
+              transition: 'box-shadow 0.2s',
+              '&:hover': { boxShadow: 2 },
+            }}>
               <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <Typography variant="body1" sx={{ flex: 1 }}>{g.goal_text}</Typography>
-                  <Stack direction="row" spacing={1} sx={{ ml: 2, flexShrink: 0 }}>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'flex-start' }, gap: 1 }}>
+                  <Typography variant="body1" sx={{ flex: 1, fontSize: { xs: '0.85rem', md: '1rem' } }}>{g.goal_text}</Typography>
+                  <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0, flexWrap: 'wrap', gap: 0.5 }}>
                     <Chip label={g.overall_index.toFixed(2)} color={g.overall_index >= 0.7 ? 'success' : 'warning'} size="small" />
                     <Chip label={GOAL_TYPE_LABELS[g.goal_type] || g.goal_type} size="small" />
                     <Chip label={ALIGN_LABELS[g.alignment_level] || g.alignment_level} size="small" variant="outlined" />

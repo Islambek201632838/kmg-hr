@@ -23,11 +23,11 @@ function shortName(name) {
 }
 
 const CRITERION_LABELS = {
-  specific: 'Конкретность',
-  measurable: 'Измеримость',
-  achievable: 'Достижимость',
-  relevant: 'Релевантность',
-  time_bound: 'Сроки',
+  specific: 'Specific / Конкретность',
+  measurable: 'Measurable / Измеримость',
+  achievable: 'Achievable / Достижимость',
+  relevant: 'Relevant / Релевантность',
+  time_bound: 'Time-bound / Сроки',
 };
 
 export default function Dashboard() {
@@ -74,25 +74,25 @@ export default function Dashboard() {
 
       {data && (
         <>
-          <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-            <Card sx={{ flex: 1, bgcolor: '#f5f8ff' }}>
-              <CardContent sx={{ textAlign: 'center' }}>
-                <Typography variant="h3" fontWeight={700} color="primary">{data.org_avg}</Typography>
-                <Typography variant="body2" color="text.secondary">Средний SMART-индекс</Typography>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 3 }}>
+            <Card sx={{ flex: 1, bgcolor: data.org_avg >= 0.7 ? '#e8f5e9' : data.org_avg >= 0.5 ? '#fff8e1' : '#fbe9e7', border: '1px solid', borderColor: data.org_avg >= 0.7 ? '#4caf50' : data.org_avg >= 0.5 ? '#ff9800' : '#f44336' }}>
+              <CardContent sx={{ textAlign: 'center', py: { xs: 1.5, md: 2.5 } }}>
+                <Typography sx={{ fontSize: { xs: '2rem', md: '3.5rem' }, fontWeight: 800 }} color={data.org_avg >= 0.7 ? '#2e7d32' : data.org_avg >= 0.5 ? '#e65100' : '#c62828'}>{data.org_avg}</Typography>
+                <Typography variant="body2" fontWeight={500}>Средний SMART-индекс</Typography>
               </CardContent>
             </Card>
-            <Card sx={{ flex: 1, bgcolor: '#f5f8ff' }}>
-              <CardContent sx={{ textAlign: 'center' }}>
-                <Typography variant="h3" fontWeight={700} color="primary">{data.departments.length}</Typography>
-                <Typography variant="body2" color="text.secondary">Подразделений</Typography>
+            <Card sx={{ flex: 1, bgcolor: '#e3f2fd', border: '1px solid #1e88e5' }}>
+              <CardContent sx={{ textAlign: 'center', py: { xs: 1.5, md: 2.5 } }}>
+                <Typography sx={{ fontSize: { xs: '2rem', md: '3.5rem' }, fontWeight: 800 }} color="#1565c0">{data.departments.length}</Typography>
+                <Typography variant="body2" fontWeight={500}>Подразделений</Typography>
               </CardContent>
             </Card>
-            <Card sx={{ flex: 1, bgcolor: '#f5f8ff' }}>
-              <CardContent sx={{ textAlign: 'center' }}>
-                <Typography variant="h3" fontWeight={700} color="primary">
+            <Card sx={{ flex: 1, bgcolor: '#f3e5f5', border: '1px solid #8e24aa' }}>
+              <CardContent sx={{ textAlign: 'center', py: { xs: 1.5, md: 2.5 } }}>
+                <Typography sx={{ fontSize: { xs: '2rem', md: '3.5rem' }, fontWeight: 800 }} color="#6a1b9a">
                   {data.departments.reduce((s, d) => s + d.total_goals, 0)}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">Всего целей</Typography>
+                <Typography variant="body2" fontWeight={500}>Всего целей</Typography>
               </CardContent>
             </Card>
           </Stack>
@@ -105,16 +105,16 @@ export default function Dashboard() {
             </Stack>
           )}
 
-          <Card variant="outlined" sx={{ mb: 3, p: 2 }}>
+          <Card variant="outlined" sx={{ mb: 3, p: { xs: 1, md: 2 }, overflowX: 'auto' }}>
             <Typography variant="subtitle1" fontWeight={600} gutterBottom>SMART-индекс по подразделениям</Typography>
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={chartData} layout="vertical" margin={{ left: 180, right: 20, top: 5, bottom: 5 }}>
+            <ResponsiveContainer width="100%" height={Math.max(300, chartData.length * 50)}>
+              <BarChart data={chartData} layout="vertical" margin={{ left: 10, right: 20, top: 5, bottom: 5 }}>
                 <XAxis type="number" domain={[0, 1]} tickFormatter={(v) => v.toFixed(1)} />
                 <YAxis
                   dataKey="short_name"
                   type="category"
-                  width={170}
-                  tick={{ fontSize: 12 }}
+                  width={150}
+                  tick={{ fontSize: 11 }}
                   interval={0}
                 />
                 <Tooltip
@@ -134,19 +134,33 @@ export default function Dashboard() {
             <Box key={dept.id}>
               <Card
                 variant="outlined"
-                sx={{ mb: 1, cursor: 'pointer', border: selectedDeptId === dept.id ? '2px solid #1a3264' : undefined }}
+                sx={{
+                  mb: 1, cursor: 'pointer',
+                  border: selectedDeptId === dept.id ? '2px solid #1a3264' : '1px solid #e0e0e0',
+                  transition: 'all 0.2s',
+                  '&:hover': { boxShadow: 4, borderColor: '#1a3264' },
+                  bgcolor: selectedDeptId === dept.id ? '#f0f4ff' : '#fff',
+                }}
                 onClick={() => setSelectedDeptId(selectedDeptId === dept.id ? null : dept.id)}
               >
-                <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1.5 }}>
-                  <Box>
-                    <Typography fontWeight={600}>{dept.name}</Typography>
+                <CardContent sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 1, py: 1.5 }}>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography fontWeight={600} sx={{ fontSize: { xs: '0.9rem', md: '1rem' } }}>{dept.name}</Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {dept.total_goals} целей | Слабый критерий: {CRITERION_LABELS[dept.weakest_criterion] || dept.weakest_criterion}
+                      {dept.total_goals} целей | Слабый: {CRITERION_LABELS[dept.weakest_criterion] || dept.weakest_criterion}
                     </Typography>
                   </Box>
-                  <Stack direction="row" spacing={1}>
-                    <Chip label={dept.avg_smart_index.toFixed(2)} color={dept.avg_smart_index >= 0.7 ? 'success' : 'warning'} />
-                    <Chip label={`Стратегия: ${(dept.strategic_ratio * 100).toFixed(0)}%`} variant="outlined" size="small" />
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Chip
+                      label={dept.avg_smart_index.toFixed(2)}
+                      sx={{
+                        fontWeight: 700, fontSize: '0.95rem',
+                        bgcolor: dept.avg_smart_index >= 0.7 ? '#e8f5e9' : dept.avg_smart_index >= 0.5 ? '#fff8e1' : '#fbe9e7',
+                        color: dept.avg_smart_index >= 0.7 ? '#2e7d32' : dept.avg_smart_index >= 0.5 ? '#e65100' : '#c62828',
+                      }}
+                    />
+                    <Chip label={`Strategic: ${(dept.strategic_ratio * 100).toFixed(0)}%`} variant="outlined" size="small" />
+                    <Typography variant="caption" color="text.secondary">{selectedDeptId === dept.id ? '▲' : '▼'}</Typography>
                   </Stack>
                 </CardContent>
               </Card>

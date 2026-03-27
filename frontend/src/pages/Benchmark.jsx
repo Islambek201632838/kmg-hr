@@ -23,8 +23,9 @@ export default function Benchmark() {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
 
+  const [loadingEmp, setLoadingEmp] = useState(true);
   useEffect(() => {
-    api.get('/api/employees').then((r) => setEmployees(r.data)).catch(() => {});
+    api.get('/api/employees').then((r) => setEmployees(r.data)).catch(() => {}).finally(() => setLoadingEmp(false));
   }, []);
 
   const handleRun = async () => {
@@ -50,16 +51,17 @@ export default function Benchmark() {
 
   return (
     <Box>
-      <Typography variant="h5" fontWeight={700} gutterBottom>Бенчмарк: корреляция с экспертной разметкой</Typography>
+      <Typography variant="h5" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '1.1rem', md: '1.5rem' } }}>Бенчмарк: корреляция с экспертной разметкой</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         10 эталонных целей разной степени качества оцениваются AI и сравниваются с экспертной оценкой.
       </Typography>
 
       <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap', alignItems: 'center' }}>
         <TextField
-          select label="Сотрудник" value={employeeId}
+          select label={loadingEmp ? 'Загрузка...' : 'Сотрудник'} value={employeeId} disabled={loadingEmp}
           onChange={(e) => setEmployeeId(e.target.value)}
-          sx={{ minWidth: 300 }} size="small"
+          sx={{ minWidth: { xs: '100%', sm: 300 } }} size="small"
+          SelectProps={{ MenuProps: { PaperProps: { sx: { maxHeight: 300 } } } }}
         >
           {employees.map((emp) => (
             <MenuItem key={emp.id} value={emp.id}>{emp.full_name} — {emp.position}</MenuItem>
@@ -75,11 +77,11 @@ export default function Benchmark() {
       {data && (
         <Box sx={{ mt: 3 }}>
           {/* Metric cards */}
-          <Stack direction="row" spacing={2} sx={{ mb: 3 }} flexWrap="wrap">
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 3 }} flexWrap="wrap">
             {Object.entries(data.metrics).map(([key, value]) => (
-              <Card key={key} sx={{ flex: 1, minWidth: 200 }}>
+              <Card key={key} sx={{ flex: 1, minWidth: { xs: '100%', sm: 140 } }}>
                 <CardContent sx={{ textAlign: 'center' }}>
-                  <Typography variant="h4" fontWeight={700} sx={{ color: metricColor(key, value) }}>
+                  <Typography fontWeight={700} sx={{ fontSize: { xs: '1.5rem', md: '2rem' }, color: metricColor(key, value) }}>
                     {key.includes('accuracy') ? `${value}%` : value}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">{CRITERION_LABELS[key]}</Typography>
@@ -99,9 +101,9 @@ export default function Benchmark() {
           </Card>
 
           {/* Chart: Expert vs AI */}
-          <Card variant="outlined" sx={{ mb: 3, p: 2 }}>
+          <Card variant="outlined" sx={{ mb: 3, p: { xs: 1, md: 2 }, overflowX: 'auto' }}>
             <Typography variant="subtitle1" fontWeight={600} gutterBottom>Эксперт vs AI (по 10 целям)</Typography>
-            <ResponsiveContainer width="100%" height={350}>
+            <ResponsiveContainer width="100%" height={300}>
               <BarChart data={chartData} margin={{ left: 10, right: 10 }}>
                 <XAxis dataKey="name" tick={{ fontSize: 9 }} angle={-20} textAnchor="end" height={70} />
                 <YAxis domain={[0, 1]} />

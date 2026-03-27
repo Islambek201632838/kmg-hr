@@ -32,36 +32,39 @@ async def get_employee_context(employee_id: int, quarter: str, year: int, sessio
 
     emp, pos_name, dept_name, dept_id = row
 
-    # Manager goals
-    manager_goals = []
-    if emp.manager_id:
+    # Queries 2, 3, 4 are independent — run in parallel
+    async def _manager_goals():
+        if not emp.manager_id:
+            return []
         mg = await session.execute(
             select(Goal.goal_text)
             .where(Goal.employee_id == emp.manager_id, Goal.quarter == quarter, Goal.year == year)
         )
-        manager_goals = [r[0] for r in mg.all()]
+        return [r[0] for r in mg.all()]
 
-    # Department KPIs
-    kpi_q = (
-        select(KpiCatalog.title, KpiTimeseries.value_num, KpiCatalog.unit)
-        .join(KpiTimeseries, KpiCatalog.metric_key == KpiTimeseries.metric_key)
-        .where(KpiTimeseries.department_id == dept_id)
-        .order_by(KpiTimeseries.period_date.desc())
-        .limit(10)
-    )
-    kpi_result = await session.execute(kpi_q)
-    kpis = [{"title": r[0], "value": float(r[1]), "unit": r[2]} for r in kpi_result.all()]
+    async def _kpis():
+        kpi_result = await session.execute(
+            select(KpiCatalog.title, KpiTimeseries.value_num, KpiCatalog.unit)
+            .join(KpiTimeseries, KpiCatalog.metric_key == KpiTimeseries.metric_key)
+            .where(KpiTimeseries.department_id == dept_id)
+            .order_by(KpiTimeseries.period_date.desc())
+            .limit(10)
+        )
+        return [{"title": r[0], "value": float(r[1]), "unit": r[2]} for r in kpi_result.all()]
 
-    # Historical goals of similar position
-    hist_q = (
-        select(Goal.goal_text)
-        .join(Employee, Goal.employee_id == Employee.id)
-        .where(Employee.position_id == emp.position_id, Goal.year < year)
-        .order_by(Goal.created_at.desc())
-        .limit(5)
+    async def _historical():
+        hist_result = await session.execute(
+            select(Goal.goal_text)
+            .join(Employee, Goal.employee_id == Employee.id)
+            .where(Employee.position_id == emp.position_id, Goal.year < year)
+            .order_by(Goal.created_at.desc())
+            .limit(5)
+        )
+        return [r[0] for r in hist_result.all()]
+
+    manager_goals, kpis, historical = await asyncio.gather(
+        _manager_goals(), _kpis(), _historical()
     )
-    hist_result = await session.execute(hist_q)
-    historical = [r[0] for r in hist_result.all()]
 
     return {
         "employee": emp,
@@ -98,47 +101,55 @@ async def evaluate_goal_endpoint(
     if not ctx:
         raise HTTPException(404, "Сотрудник не найден")
 
-    result = await evaluate_goal(
-        goal_text=req.goal_text,
-        position=ctx["position"],
-        department=ctx["department"],
-        manager_goals=ctx["manager_goals"],
-        kpis=ctx["kpis"],
-        historical_goals=ctx["historical_goals"],
+    # Run Gemini + alert DB queries in parallel (Gemini ~3-5s, DB ~20ms)
+    async def _gemini():
+        return await evaluate_goal(
+            goal_text=req.goal_text,
+            position=ctx["position"],
+            department=ctx["department"],
+            manager_goals=ctx["manager_goals"],
+            kpis=ctx["kpis"],
+            historical_goals=ctx["historical_goals"],
+        )
+
+    async def _alert_data():
+        emp = ctx["employee"]
+        # Stats + same-position IDs in parallel (both remote)
+        stats_q = select(
+            func.count(Goal.goal_id), func.coalesce(func.sum(Goal.weight), 0)
+        ).where(Goal.employee_id == req.employee_id, Goal.quarter == req.quarter, Goal.year == req.year)
+
+        pos_q = select(Employee.id).where(
+            Employee.position_id == emp.position_id, Employee.id != req.employee_id
+        )
+
+        stats_res, pos_res = await asyncio.gather(
+            remote.execute(stats_q), remote.execute(pos_q)
+        )
+        goals_count, total_weight = stats_res.one()
+        same_pos_ids = [r[0] for r in pos_res.all()]
+
+        # F-20: historical avg from local DB
+        historical_avg_index = None
+        if same_pos_ids:
+            hist_avg_res = await local.execute(
+                select(func.avg(AiEvaluation.overall_index))
+                .where(AiEvaluation.employee_id.in_(same_pos_ids))
+            )
+            hist_avg = hist_avg_res.scalar()
+            if hist_avg is not None:
+                historical_avg_index = float(hist_avg)
+
+        return int(goals_count), float(total_weight), historical_avg_index
+
+    result, (goals_count, total_weight, historical_avg_index) = await asyncio.gather(
+        _gemini(), _alert_data()
     )
 
     goal_type = result.get("goal_type", "output")
     alignment_level = result.get("strategic_alignment", {}).get("level", "operational")
     smart_scores = result["smart_scores"]
     smart_index = result["smart_index"]
-
-    # Goals count + total weight for alerts
-    stats_result = await remote.execute(
-        select(func.count(Goal.goal_id), func.coalesce(func.sum(Goal.weight), 0))
-        .where(Goal.employee_id == req.employee_id, Goal.quarter == req.quarter, Goal.year == req.year)
-    )
-    goals_count, total_weight = stats_result.one()
-
-    # F-20: Historical avg for similar positions (cross-DB: remote employees + local evaluations)
-    historical_avg_index = None
-    emp = ctx["employee"]
-    # Step 1: get employee_ids with same position from remote DB
-    same_pos_result = await remote.execute(
-        select(Employee.id).where(
-            Employee.position_id == emp.position_id,
-            Employee.id != req.employee_id,
-        )
-    )
-    same_pos_ids = [r[0] for r in same_pos_result.all()]
-    # Step 2: avg index from local AI evaluations for those employees
-    if same_pos_ids:
-        hist_avg_result = await local.execute(
-            select(func.avg(AiEvaluation.overall_index))
-            .where(AiEvaluation.employee_id.in_(same_pos_ids))
-        )
-        hist_avg = hist_avg_result.scalar()
-        if hist_avg is not None:
-            historical_avg_index = float(hist_avg)
 
     raw_alerts = check_goal_alerts(
         overall_index=smart_index,
@@ -235,6 +246,7 @@ async def evaluate_batch_endpoint(
     ])
 
     evals = []
+    db_records = []
     all_scores = {"specific": [], "measurable": [], "achievable": [], "relevant": [], "time_bound": []}
     total_weight = 0.0
     activity_count = 0
@@ -248,7 +260,7 @@ async def evaluate_batch_endpoint(
 
         evals.append(GoalEval(
             goal_id=str(goal.goal_id),
-            goal_text=goal.goal_text[:100],
+            goal_text=goal.goal_text,
             overall_index=smart_index,
             goal_type=goal_type,
             alignment_level=alignment_level,
@@ -264,7 +276,7 @@ async def evaluate_batch_endpoint(
         if alignment_level != "strategic":
             no_strategic_count += 1
 
-        local.add(AiEvaluation(
+        db_records.append(AiEvaluation(
             goal_id=str(goal.goal_id),
             employee_id=req.employee_id,
             goal_text=goal.goal_text,
@@ -277,6 +289,7 @@ async def evaluate_batch_endpoint(
             reformulation=result.get("improved_goal"),
         ))
 
+    local.add_all(db_records)
     await local.commit()
 
     # Find weakest criterion

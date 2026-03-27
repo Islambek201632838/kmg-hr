@@ -16,13 +16,20 @@ export default function GenerateGoals() {
   const [selected, setSelected] = useState([]);
   const [error, setError] = useState('');
   const [ragExpanded, setRagExpanded] = useState(false);
+  const [touched, setTouched] = useState({});
+  const [loadingEmp, setLoadingEmp] = useState(true);
 
   useEffect(() => {
-    api.get('/api/employees').then((r) => setEmployees(r.data)).catch(() => {});
+    api.get('/api/employees').then((r) => setEmployees(r.data)).catch(() => {}).finally(() => setLoadingEmp(false));
   }, []);
 
+  const errs = {};
+  if (!employeeId) errs.employeeId = 'Выберите сотрудника';
+  if (year < 2020 || year > 2030) errs.year = 'Год от 2020 до 2030';
+
   const handleGenerate = async () => {
-    if (!employeeId) return;
+    setTouched({ employeeId: true, year: true });
+    if (!employeeId || year < 2020 || year > 2030) return;
     setLoading(true);
     setError('');
     setResult(null);
@@ -50,33 +57,43 @@ export default function GenerateGoals() {
 
   return (
     <Box>
-      <Typography variant="h5" fontWeight={700} gutterBottom>AI-генерация целей</Typography>
+      <Typography variant="h5" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '1.2rem', md: '1.5rem' } }}>
+        AI-генерация целей
+      </Typography>
 
       <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
         <TextField
-          select label="Сотрудник" value={employeeId}
-          onChange={(e) => setEmployeeId(e.target.value)}
-          sx={{ minWidth: 300 }} size="small"
+          select label={loadingEmp ? 'Загрузка...' : 'Сотрудник'} value={employeeId} disabled={loadingEmp}
+          onChange={(e) => { setEmployeeId(e.target.value); setTouched(p => ({ ...p, employeeId: true })); }}
+          sx={{ minWidth: { xs: '100%', sm: 300 } }} size="small"
+          error={touched.employeeId && !!errs.employeeId}
+          helperText={touched.employeeId && errs.employeeId}
+          SelectProps={{ MenuProps: { PaperProps: { sx: { maxHeight: 300 } } } }}
         >
           {employees.map((emp) => (
-            <MenuItem key={emp.id} value={emp.id}>{emp.full_name} — {emp.position}</MenuItem>
+            <MenuItem key={emp.id} value={emp.id} sx={{ whiteSpace: 'normal', fontSize: '0.85rem' }}>{emp.full_name} — {emp.position}</MenuItem>
           ))}
         </TextField>
         <TextField select label="Квартал" value={quarter} onChange={(e) => setQuarter(e.target.value)} size="small" sx={{ width: 120 }}>
           {['Q1', 'Q2', 'Q3', 'Q4'].map((q) => <MenuItem key={q} value={q}>{q}</MenuItem>)}
         </TextField>
-        <TextField label="Год" type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} size="small" sx={{ width: 100 }} />
+        <TextField label="Год" type="number" value={year}
+          onChange={(e) => { setYear(Number(e.target.value)); setTouched(p => ({ ...p, year: true })); }}
+          size="small" sx={{ width: 100 }}
+          error={touched.year && !!errs.year}
+          helperText={touched.year && errs.year}
+        />
         <TextField
           label="Фокус (опционально)"
           placeholder="цифровизация, снижение затрат..."
           value={focusArea}
           onChange={(e) => setFocusArea(e.target.value)}
           size="small"
-          sx={{ minWidth: 250 }}
+          sx={{ minWidth: { xs: '100%', sm: 250 } }}
         />
       </Box>
 
-      <Button variant="contained" onClick={handleGenerate} disabled={loading || !employeeId} size="large">
+      <Button variant="contained" onClick={handleGenerate} disabled={loading} size="large">
         {loading ? <CircularProgress size={24} color="inherit" /> : 'Сгенерировать цели'}
       </Button>
 
@@ -84,8 +101,8 @@ export default function GenerateGoals() {
 
       {result && (
         <Box sx={{ mt: 3 }}>
-          <Stack direction="row" spacing={2} sx={{ mb: 2 }} flexWrap="wrap">
-            <Chip label={`ВНД документов: ${result.context.vnd_docs_used}`} variant="outlined" color="primary" />
+          <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap', gap: 0.5 }}>
+            <Chip label={`ВНД: ${result.context.vnd_docs_used}`} variant="outlined" color="primary" size="small" />
             {result.context.avg_rag_score > 0 && (
               <Chip
                 label={`Релевантность: ${(result.context.avg_rag_score * 100).toFixed(0)}%`}
@@ -93,9 +110,13 @@ export default function GenerateGoals() {
                 size="small"
               />
             )}
-            <Chip label={`KPI: ${result.context.kpis_used.join(', ') || 'нет'}`} variant="outlined" />
-            {result.context.manager_goals_used && <Chip label="Цели руководителя учтены" color="success" size="small" />}
+            {result.context.manager_goals_used && <Chip label="Цели руководителя" color="success" size="small" />}
           </Stack>
+          {result.context.kpis_used?.length > 0 && (
+            <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+              KPI: {result.context.kpis_used.join(', ')}
+            </Typography>
+          )}
 
           {/* RAG chunks detail */}
           {result.context.rag_chunks?.length > 0 && (

@@ -3,11 +3,11 @@ import { Typography, Box, Card, CardContent, Chip, Stack, CircularProgress, Line
 import api from '../api/client';
 
 const CRITERION_LABELS = {
-  'Конкретность': 'S',
-  'Измеримость': 'M',
-  'Достижимость': 'A',
-  'Релевантность': 'R',
-  'Сроки': 'T',
+  'Конкретность': 'Specific',
+  'Измеримость': 'Measurable',
+  'Достижимость': 'Achievable',
+  'Релевантность': 'Relevant',
+  'Сроки': 'Time-bound',
 };
 
 function scoreColor(val) {
@@ -46,15 +46,18 @@ export default function Team() {
 
   return (
     <Box>
-      <Typography variant="h5" fontWeight={700} gutterBottom>Команда — зрелость целеполагания</Typography>
+      <Typography variant="h5" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '1.2rem', md: '1.5rem' } }}>
+        Команда — зрелость целеполагания
+      </Typography>
 
       <TextField
         select label="Подразделение" value={selectedDept}
         onChange={(e) => setSelectedDept(e.target.value)}
-        sx={{ minWidth: 400, mb: 3 }} size="small"
+        sx={{ width: '100%', maxWidth: { sm: 500 }, mb: 3 }} size="small"
+        SelectProps={{ MenuProps: { PaperProps: { sx: { maxHeight: 300 } } } }}
       >
         {departments.map((d) => (
-          <MenuItem key={d.id} value={d.id}>{d.name} ({d.total_goals} целей)</MenuItem>
+          <MenuItem key={d.id} value={d.id} sx={{ whiteSpace: 'normal', fontSize: '0.85rem' }}>{d.name} ({d.total_goals} целей)</MenuItem>
         ))}
       </TextField>
 
@@ -65,15 +68,15 @@ export default function Team() {
           {/* Maturity index card */}
           <Card variant="outlined" sx={{ mb: 3, bgcolor: '#f5f8ff' }}>
             <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2, mb: 2 }}>
                 <Box>
-                  <Typography variant="h6">{maturity.department}</Typography>
+                  <Typography variant="h6" sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>{maturity.department}</Typography>
                   <Typography variant="body2" color="text.secondary">
                     Оценено целей: {maturity.evaluated_goals}
                   </Typography>
                 </Box>
                 <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="h3" fontWeight={700} color={maturity.maturity_index >= 0.7 ? 'success.main' : maturity.maturity_index >= 0.5 ? 'warning.main' : 'error.main'}>
+                  <Typography fontWeight={700} sx={{ fontSize: { xs: '2rem', md: '3rem' } }} color={maturity.maturity_index >= 0.7 ? 'success.main' : maturity.maturity_index >= 0.5 ? 'warning.main' : 'error.main'}>
                     {maturity.maturity_index}
                   </Typography>
                   <Typography variant="caption">Индекс зрелости</Typography>
@@ -101,7 +104,7 @@ export default function Team() {
               {/* Goal type distribution */}
               <Box sx={{ mt: 2 }}>
                 <Typography variant="body2" fontWeight={500} gutterBottom>Распределение по типам:</Typography>
-                <Stack direction="row" spacing={1}>
+                <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ gap: 0.5 }}>
                   <Chip label={`Влияние: ${(maturity.breakdown.goal_type_distribution.impact * 100).toFixed(0)}%`} color="success" size="small" />
                   <Chip label={`Результат: ${(maturity.breakdown.goal_type_distribution.output * 100).toFixed(0)}%`} color="primary" size="small" />
                   <Chip label={`Активность: ${(maturity.breakdown.goal_type_distribution.activity * 100).toFixed(0)}%`} color={maturity.breakdown.goal_type_distribution.activity > 0.3 ? 'error' : 'default'} size="small" />
@@ -153,7 +156,7 @@ export default function Team() {
           </Typography>
           {employees.map((emp) => (
             <Card key={emp.id} variant="outlined" sx={{ mb: 1 }}>
-              <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1.5 }}>
+              <CardContent sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 0.5, py: 1.5 }}>
                 <Box>
                   <Typography fontWeight={500}>{emp.full_name}</Typography>
                   <Typography variant="caption" color="text.secondary">{emp.position}</Typography>

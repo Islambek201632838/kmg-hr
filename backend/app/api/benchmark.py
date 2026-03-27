@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -99,12 +100,8 @@ async def run_benchmark(
     if not ctx:
         return {"error": "Сотрудник не найден"}
 
-    results = []
-    total_diff = 0.0
-    type_match = 0
-    align_match = 0
-
-    for item in BENCHMARK_GOALS:
+    # Evaluate all 10 goals in parallel (~3s instead of ~30s)
+    async def _eval_one(item):
         try:
             ai = await evaluate_goal(
                 goal_text=item["goal_text"],
@@ -113,38 +110,32 @@ async def run_benchmark(
                 manager_goals=ctx["manager_goals"],
                 kpis=ctx["kpis"],
             )
-
             ai_index = ai["smart_index"]
             ai_type = ai.get("goal_type", "output")
             ai_align = ai.get("strategic_alignment", {}).get("level", "operational")
-
             diff = abs(ai_index - item["expert_index"])
-            total_diff += diff
-            t_match = ai_type == item["expert_type"]
-            a_match = ai_align == item["expert_align"]
-            if t_match:
-                type_match += 1
-            if a_match:
-                align_match += 1
-
-            results.append({
+            return {
                 "goal_text": item["goal_text"][:80],
                 "expert_index": item["expert_index"],
                 "ai_index": ai_index,
                 "diff": round(diff, 2),
                 "expert_type": item["expert_type"],
                 "ai_type": ai_type,
-                "type_match": t_match,
+                "type_match": ai_type == item["expert_type"],
                 "expert_align": item["expert_align"],
                 "ai_align": ai_align,
-                "align_match": a_match,
+                "align_match": ai_align == item["expert_align"],
                 "comment": item["comment"],
-            })
+            }
         except Exception as e:
-            results.append({
-                "goal_text": item["goal_text"][:80],
-                "error": str(e),
-            })
+            return {"goal_text": item["goal_text"][:80], "error": str(e)}
+
+    results = await asyncio.gather(*[_eval_one(item) for item in BENCHMARK_GOALS])
+    results = list(results)
+
+    total_diff = sum(r.get("diff", 0) for r in results if "ai_index" in r)
+    type_match = sum(1 for r in results if r.get("type_match"))
+    align_match = sum(1 for r in results if r.get("align_match"))
 
     n = len(BENCHMARK_GOALS)
     mae = round(total_diff / n, 3) if n else 0

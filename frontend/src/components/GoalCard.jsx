@@ -2,15 +2,15 @@ import React from 'react';
 import { Card, CardContent, Typography, Box, Chip, Stack, LinearProgress } from '@mui/material';
 
 const GOAL_TYPE_LABELS = {
-  activity: 'Активность',
-  output: 'Результат',
-  impact: 'Влияние на бизнес',
+  activity: 'Activity / Активность',
+  output: 'Output / Результат',
+  impact: 'Impact / Влияние на бизнес',
 };
 
 const ALIGN_LABELS = {
-  strategic: 'Стратегическая',
-  functional: 'Функциональная',
-  operational: 'Операционная',
+  strategic: 'Strategic / Стратегическая',
+  functional: 'Functional / Функциональная',
+  operational: 'Operational / Операционная',
 };
 
 export default function GoalCard({ goal, onSelect, selected }) {
@@ -26,9 +26,9 @@ export default function GoalCard({ goal, onSelect, selected }) {
       onClick={() => onSelect && onSelect(goal)}
     >
       <CardContent>
-        <Typography variant="body1" fontWeight={500} gutterBottom>{goal.text}</Typography>
+        <Typography variant="body1" fontWeight={500} gutterBottom sx={{ fontSize: { xs: '0.85rem', md: '1rem' } }}>{goal.text}</Typography>
 
-        <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
+        <Stack direction="row" spacing={0.5} sx={{ mb: 1, flexWrap: 'wrap', gap: 0.5 }}>
           <Chip label={GOAL_TYPE_LABELS[goal.goal_type] || goal.goal_type} size="small" color={goal.goal_type === 'impact' ? 'success' : goal.goal_type === 'output' ? 'primary' : 'default'} />
           <Chip label={ALIGN_LABELS[goal.strategic_alignment?.level] || goal.strategic_alignment?.level || 'Операционная'} size="small" variant="outlined" />
           {goal.weight && <Chip label={`Вес: ${goal.weight}%`} size="small" variant="outlined" />}

@@ -2,11 +2,11 @@ import React from 'react';
 import { Card, CardContent, Typography, Box, LinearProgress, Chip, Stack, Divider, Alert } from '@mui/material';
 
 const CRITERIA_LABELS = {
-  specific: 'Конкретность (S)',
-  measurable: 'Измеримость (M)',
-  achievable: 'Достижимость (A)',
-  relevant: 'Релевантность (R)',
-  time_bound: 'Ограниченность во времени (T)',
+  specific: 'Specific / Конкретность',
+  measurable: 'Measurable / Измеримость',
+  achievable: 'Achievable / Достижимость',
+  relevant: 'Relevant / Релевантность',
+  time_bound: 'Time-bound / Ограниченность во времени',
 };
 
 function scoreColor(score) {
@@ -21,14 +21,17 @@ export default function SmartScoreCard({ evaluation }) {
   const { goal_text, smart_scores, smart_index, recommendations, improved_goal, alerts } = evaluation;
 
   return (
-    <Card variant="outlined" sx={{ mt: 2 }}>
+    <Card variant="outlined" sx={{ mt: 2, borderLeft: `5px solid ${smart_index >= 0.7 ? '#4caf50' : smart_index >= 0.5 ? '#ff9800' : '#f44336'}` }}>
       <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6">SMART-оценка</Typography>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 1, mb: 2 }}>
+          <Typography variant="h6" fontWeight={700} sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>SMART-оценка</Typography>
           <Chip
             label={`Индекс: ${smart_index?.toFixed(2)}`}
-            color={smart_index >= 0.7 ? 'success' : smart_index >= 0.5 ? 'warning' : 'error'}
-            sx={{ fontWeight: 700, fontSize: '1rem', px: 1 }}
+            sx={{
+              fontWeight: 700, fontSize: { xs: '0.9rem', md: '1.1rem' }, px: 2, py: 0.5,
+              bgcolor: smart_index >= 0.7 ? '#e8f5e9' : smart_index >= 0.5 ? '#fff8e1' : '#fbe9e7',
+              color: smart_index >= 0.7 ? '#2e7d32' : smart_index >= 0.5 ? '#e65100' : '#c62828',
+            }}
           />
         </Box>
 
@@ -53,7 +56,7 @@ export default function SmartScoreCard({ evaluation }) {
 
         <Divider sx={{ my: 2 }} />
 
-        <Typography variant="h5" fontWeight={700}>
+        <Typography fontWeight={700} sx={{ fontSize: { xs: '1.3rem', md: '1.5rem' } }}>
           Итоговый SMART-индекс: {smart_index?.toFixed(2)}
         </Typography>
 
@@ -69,9 +72,11 @@ export default function SmartScoreCard({ evaluation }) {
 
         {/* Improved goal */}
         {improved_goal && (
-          <Box sx={{ mt: 2, p: 1.5, bgcolor: '#fff8e1', borderRadius: 1 }}>
-            <Typography variant="subtitle2" gutterBottom>Предложенная переформулировка:</Typography>
-            <Typography variant="body2" fontStyle="italic">{improved_goal}</Typography>
+          <Box sx={{ mt: 2, p: 2, bgcolor: '#fff8e1', borderRadius: 1, borderLeft: '4px solid #e8a838' }}>
+            <Typography variant="subtitle2" fontWeight={700} color="#e65100" gutterBottom>
+              Предложенная переформулировка:
+            </Typography>
+            <Typography variant="body1" fontStyle="italic">{improved_goal}</Typography>
           </Box>
         )}
 
