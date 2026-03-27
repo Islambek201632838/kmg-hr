@@ -7,9 +7,10 @@ from app.config import settings
 remote_engine = create_async_engine(
     settings.remote_db_url,
     echo=False,
-    pool_size=5,
-    max_overflow=5,
+    pool_size=10,
+    max_overflow=10,
     pool_pre_ping=True,
+    pool_recycle=3600,
 )
 RemoteSession = async_sessionmaker(remote_engine, class_=AsyncSession, expire_on_commit=False)
 
@@ -17,8 +18,10 @@ RemoteSession = async_sessionmaker(remote_engine, class_=AsyncSession, expire_on
 local_engine = create_async_engine(
     settings.local_db_url,
     echo=False,
-    pool_size=5,
-    max_overflow=5,
+    pool_size=10,
+    max_overflow=10,
+    pool_pre_ping=True,
+    pool_recycle=3600,
 )
 LocalSession = async_sessionmaker(local_engine, class_=AsyncSession, expire_on_commit=False)
 

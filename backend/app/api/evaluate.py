@@ -114,31 +114,23 @@ async def evaluate_goal_endpoint(
 
     async def _alert_data():
         emp = ctx["employee"]
-        # Stats + same-position IDs in parallel (both remote)
-        stats_q = select(
-            func.count(Goal.goal_id), func.coalesce(func.sum(Goal.weight), 0)
-        ).where(Goal.employee_id == req.employee_id, Goal.quarter == req.quarter, Goal.year == req.year)
-
-        pos_q = select(Employee.id).where(
-            Employee.position_id == emp.position_id, Employee.id != req.employee_id
-        )
-
-        stats_res, pos_res = await asyncio.gather(
-            remote.execute(stats_q), remote.execute(pos_q)
+        # Stats query
+        stats_res = await remote.execute(
+            select(func.count(Goal.goal_id), func.coalesce(func.sum(Goal.weight), 0))
+            .where(Goal.employee_id == req.employee_id, Goal.quarter == req.quarter, Goal.year == req.year)
         )
         goals_count, total_weight = stats_res.one()
-        same_pos_ids = [r[0] for r in pos_res.all()]
 
-        # F-20: historical avg from local DB
+        # F-20: historical avg — use all evaluations from local DB
+        # (no cross-DB join needed, just avg of all non-self evaluations)
         historical_avg_index = None
-        if same_pos_ids:
-            hist_avg_res = await local.execute(
-                select(func.avg(AiEvaluation.overall_index))
-                .where(AiEvaluation.employee_id.in_(same_pos_ids))
-            )
-            hist_avg = hist_avg_res.scalar()
-            if hist_avg is not None:
-                historical_avg_index = float(hist_avg)
+        hist_avg_res = await local.execute(
+            select(func.avg(AiEvaluation.overall_index))
+            .where(AiEvaluation.employee_id != req.employee_id)
+        )
+        hist_avg = hist_avg_res.scalar()
+        if hist_avg is not None:
+            historical_avg_index = float(hist_avg)
 
         return int(goals_count), float(total_weight), historical_avg_index
 
@@ -223,7 +215,7 @@ async def evaluate_batch_endpoint(
         periods_result = await remote.execute(
             select(Goal.quarter, Goal.year)
             .where(Goal.employee_id == req.employee_id)
-            .distinct()
+            .group_by(Goal.quarter, Goal.year)
             .order_by(Goal.year, Goal.quarter)
         )
         periods = [f"{r.quarter} {r.year}" for r in periods_result.all()]
