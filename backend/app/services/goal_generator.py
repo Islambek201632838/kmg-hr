@@ -26,6 +26,8 @@ GENERATE_PROMPT = """Ты HR-эксперт в нефтегазовой комп
 
 Если smart_index какой-либо цели ниже 0.7, переформулируй её до уровня >= 0.7.
 
+Для каждой цели ОБЯЗАТЕЛЬНО укажи поле "rationale" — 1-2 предложения, объясняющие ПОЧЕМУ предложена именно эта цель (какой KPI, ВНД или цель руководителя стали основой).
+
 Ответ СТРОГО в JSON формате:
 {{
   "goals": [
@@ -48,7 +50,8 @@ GENERATE_PROMPT = """Ты HR-эксперт в нефтегазовой комп
         "relevant": 0.9,
         "time_bound": 0.95
       }},
-      "smart_index": 0.88
+      "smart_index": 0.88,
+      "rationale": "Цель основана на KPI 'Сокращение издержек' и п.3.2 Политики управления затратами"
     }}
   ]
 }}"""
@@ -166,6 +169,7 @@ async def generate_goals(
         goal.setdefault("source_quote", "")
         goal.setdefault("goal_type", "output")
         goal.setdefault("strategic_alignment", {"level": "functional", "source": ""})
+        goal.setdefault("rationale", "")
 
         # Compute smart_index from smart_scores if present
         scores = goal.get("smart_scores", {})

@@ -91,6 +91,8 @@ class GeneratedGoal(BaseModel):
     smart_index: float
     goal_type: str
     strategic_alignment: StrategicAlignment
+    rationale: str = Field("", description="Обоснование: почему предложена именно эта цель (связь с KPI, ВНД, целью руководителя)")
+    matched_chunks: list["RagChunk"] = Field([], description="Фрагменты ВНД, использованные для генерации этой конкретной цели")
 
 
 class RagChunk(BaseModel):

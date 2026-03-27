@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_remote_session, get_local_session
 from app.models import Goal, AiGeneratedGoals, AcceptedGoals
-from app.schemas import GenerateRequest, GenerateResponse, GeneratedGoal, GenerateContext, StrategicAlignment, AcceptRequest
+from app.schemas import GenerateRequest, GenerateResponse, GeneratedGoal, GenerateContext, StrategicAlignment, AcceptRequest, RagChunk
 from app.services.goal_generator import generate_goals
 from app.services.dedup_checker import check_duplicates
 from app.api.evaluate import get_employee_context
@@ -72,9 +72,10 @@ async def generate_goals_endpoint(
                 )
 
     # Build response — verify source_doc against retrieved chunks
+    all_rag_chunks = gen_result["context"].get("rag_chunks", [])
     retrieved_titles = {
         ch["doc_title"].lower().strip()
-        for ch in gen_result["context"].get("rag_chunks", [])
+        for ch in all_rag_chunks
         if ch.get("doc_title")
     }
 
@@ -91,6 +92,19 @@ async def generate_goals_endpoint(
                 f"Источник «{source_doc[:60]}» не найден среди извлечённых ВНД — возможна галлюцинация"
             )
 
+        # Per-goal matched RAG chunks: find chunks matching this goal's source_doc
+        matched = []
+        if source_doc:
+            src_lower = source_doc.lower().strip()
+            for ch in all_rag_chunks:
+                if ch.get("doc_title", "").lower().strip() == src_lower:
+                    matched.append(RagChunk(
+                        doc_title=ch["doc_title"],
+                        doc_type=ch.get("doc_type", ""),
+                        score=round(ch["score"], 3),
+                        text_preview=ch["text"][:200],
+                    ))
+
         goals.append(GeneratedGoal(
             text=g["text"],
             metric=g.get("metric", ""),
@@ -101,6 +115,8 @@ async def generate_goals_endpoint(
             smart_index=g.get("smart_index", 0.0),
             goal_type=g.get("goal_type", "output"),
             strategic_alignment=alignment,
+            rationale=g.get("rationale", ""),
+            matched_chunks=matched,
         ))
 
     context = GenerateContext(**gen_result["context"])

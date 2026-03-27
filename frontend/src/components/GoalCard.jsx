@@ -56,6 +56,13 @@ export default function GoalCard({ goal, onSelect, selected }) {
           </Box>
         )}
 
+        {goal.rationale && (
+          <Box sx={{ mt: 1, p: 1, bgcolor: '#e3f2fd', borderRadius: 1, borderLeft: '3px solid #1e54a0' }}>
+            <Typography variant="caption" fontWeight={500} color="primary">Обоснование:</Typography>
+            <Typography variant="caption" display="block">{goal.rationale}</Typography>
+          </Box>
+        )}
+
         {goal.source_doc && (
           <Box sx={{ mt: 1, p: 1, bgcolor: '#f5f5f5', borderRadius: 1 }}>
             <Typography variant="caption" fontWeight={500}>Источник: {goal.source_doc}</Typography>
@@ -64,6 +71,31 @@ export default function GoalCard({ goal, onSelect, selected }) {
                 "{goal.source_quote}"
               </Typography>
             )}
+          </Box>
+        )}
+
+        {goal.matched_chunks?.length > 0 && (
+          <Box sx={{ mt: 1 }}>
+            <Typography variant="caption" fontWeight={500} color="text.secondary">
+              Использованные фрагменты ВНД ({goal.matched_chunks.length}):
+            </Typography>
+            {goal.matched_chunks.map((ch, i) => (
+              <Box key={i} sx={{ mt: 0.5, pl: 1, borderLeft: '2px solid #e0e0e0' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="caption" fontWeight={500}>{ch.doc_title}</Typography>
+                  <Typography variant="caption" fontWeight={700}
+                    color={ch.score >= 0.6 ? 'success.main' : ch.score >= 0.4 ? 'warning.main' : 'error.main'}>
+                    {(ch.score * 100).toFixed(0)}%
+                  </Typography>
+                </Box>
+                <LinearProgress variant="determinate" value={ch.score * 100}
+                  color={ch.score >= 0.6 ? 'success' : ch.score >= 0.4 ? 'warning' : 'error'}
+                  sx={{ height: 3, borderRadius: 2, mb: 0.3 }} />
+                <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                  {ch.text_preview}
+                </Typography>
+              </Box>
+            ))}
           </Box>
         )}
       </CardContent>

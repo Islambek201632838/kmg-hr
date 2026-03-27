@@ -33,4 +33,4 @@ Thumbs.db
 *.swp
 
 # Logs
-*.log
+*.logreference/.~lock.*

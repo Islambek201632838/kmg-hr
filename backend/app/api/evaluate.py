@@ -119,12 +119,34 @@ async def evaluate_goal_endpoint(
     )
     goals_count, total_weight = stats_result.one()
 
+    # F-20: Historical avg for similar positions (cross-DB: remote employees + local evaluations)
+    historical_avg_index = None
+    emp = ctx["employee"]
+    # Step 1: get employee_ids with same position from remote DB
+    same_pos_result = await remote.execute(
+        select(Employee.id).where(
+            Employee.position_id == emp.position_id,
+            Employee.id != req.employee_id,
+        )
+    )
+    same_pos_ids = [r[0] for r in same_pos_result.all()]
+    # Step 2: avg index from local AI evaluations for those employees
+    if same_pos_ids:
+        hist_avg_result = await local.execute(
+            select(func.avg(AiEvaluation.overall_index))
+            .where(AiEvaluation.employee_id.in_(same_pos_ids))
+        )
+        hist_avg = hist_avg_result.scalar()
+        if hist_avg is not None:
+            historical_avg_index = float(hist_avg)
+
     raw_alerts = check_goal_alerts(
         overall_index=smart_index,
         alignment_level=alignment_level,
         goal_type=goal_type,
         goals_count=int(goals_count),
         total_weight=float(total_weight),
+        historical_avg_index=historical_avg_index,
     )
     alerts = [AlertItem(**a) for a in raw_alerts]
 

@@ -6,6 +6,7 @@ def check_goal_alerts(
     total_weight: float,
     has_duplicate: bool = False,
     duplicate_info: str | None = None,
+    historical_avg_index: float | None = None,
 ) -> list[dict]:
     """
     Check alert conditions per TZ requirements.
@@ -65,6 +66,20 @@ def check_goal_alerts(
             "code": "F19_ACTIVITY_GOAL",
             "message": "Цель сформулирована как активность (activity). Рекомендуется переформулировать в результат (output/impact)",
         })
+
+    # F-20: Historical achievability
+    if historical_avg_index is not None and historical_avg_index > 0:
+        deviation = abs(overall_index - historical_avg_index) / historical_avg_index
+        if deviation > 0.30:
+            direction = "выше" if overall_index > historical_avg_index else "ниже"
+            alerts.append({
+                "level": "warning",
+                "code": "F20_ACHIEVABILITY",
+                "message": (
+                    f"SMART-индекс ({overall_index:.2f}) на {deviation:.0%} {direction} среднего "
+                    f"для аналогичных ролей ({historical_avg_index:.2f}) — проверьте реалистичность"
+                ),
+            })
 
     # F-21: Duplicate
     if has_duplicate:
