@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TextField, Button, MenuItem, Typography, Box, CircularProgress } from '@mui/material';
+import { TextField, Button, MenuItem, Typography, Box, CircularProgress, Snackbar, Alert } from '@mui/material';
 import api from '../api/client';
 import SmartScoreCard from '../components/SmartScoreCard';
 import AlertBanner from '../components/AlertBanner';
@@ -14,6 +14,8 @@ export default function EvaluateGoal() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [touched, setTouched] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [snack, setSnack] = useState({ open: false, msg: '', severity: 'success' });
   const [loadingEmp, setLoadingEmp] = useState(true);
 
   useEffect(() => {
@@ -128,7 +130,58 @@ export default function EvaluateGoal() {
       </Button>
 
       {error && <AlertBanner warnings={[error]} />}
-      {result && <SmartScoreCard evaluation={result} />}
+      {result && (
+        <>
+          <SmartScoreCard evaluation={result} />
+          <Box sx={{ mt: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
+            <Button
+              variant="contained"
+              color="success"
+              size="large"
+              disabled={saving || result.smart_index < 0.7}
+              onClick={async () => {
+                setSaving(true);
+                try {
+                  await api.post('/api/save-evaluation', {
+                    employee_id: Number(employeeId),
+                    goal_text: result.goal_text,
+                    smart_scores: result.smart_scores,
+                    smart_index: result.smart_index,
+                    goal_type: result.goal_type || 'output',
+                    alignment_level: result.strategic_alignment?.level || 'operational',
+                    alignment_source: result.strategic_alignment?.source || '',
+                    recommendations: result.recommendations || [],
+                    improved_goal: result.improved_goal,
+                  });
+                  setSnack({ open: true, msg: 'Цель сохранена в систему', severity: 'success' });
+                  setGoalText('');
+                  setResult(null);
+                  setTouched({});
+                } catch (e) {
+                  setSnack({ open: true, msg: e.response?.data?.detail || 'Ошибка сохранения', severity: 'error' });
+                } finally {
+                  setSaving(false);
+                }
+              }}
+            >
+              {saving ? <CircularProgress size={20} color="inherit" /> : 'Сохранить цель'}
+            </Button>
+            {result.smart_index < 0.7 && (
+              <Typography variant="body2" color="error">
+                SMART-индекс ниже 0.7 — переформулируйте цель перед сохранением
+              </Typography>
+            )}
+            {result.smart_index >= 0.7 && (
+              <Typography variant="body2" color="success.main">
+                Цель прошла порог качества — можно сохранить
+              </Typography>
+            )}
+          </Box>
+        </>
+      )}
+      <Snackbar open={snack.open} autoHideDuration={4000} onClose={() => setSnack(s => ({ ...s, open: false }))}>
+        <Alert severity={snack.severity} variant="filled">{snack.msg}</Alert>
+      </Snackbar>
     </Box>
   );
 }

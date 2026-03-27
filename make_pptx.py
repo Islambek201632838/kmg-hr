@@ -24,7 +24,7 @@ prs = Presentation()
 prs.slide_width  = Inches(13.33)
 prs.slide_height = Inches(7.5)
 BLANK = prs.slide_layouts[6]
-TOTAL = 18
+TOTAL = 19
 
 # ─── helpers ──────────────────────────────────────────────────────────────────
 def rect(slide, l, t, w, h, fill=DARK_BLUE):
@@ -526,7 +526,45 @@ s8()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# СЛАЙД 11 — ТИПЫ ЦЕЛЕЙ + СТРАТЕГИЧЕСКАЯ СВЯЗКА (бизнес)
+# СЛАЙД 12 — ОПТИМИЗАЦИИ: кеш, дедупликация, порог, удаление
+# ══════════════════════════════════════════════════════════════════════════════
+def s_optimizations():
+    s = prs.slides.add_slide(BLANK)
+    rect(s, 0, 0, 13.33, 7.5, LIGHT)
+    header(s, "Оптимизации оценки и хранения", "Кеш · дедупликация · порог качества · управление целями")
+    accent_line(s)
+
+    items = [
+        (GREEN, "✅", "Кеш AI-оценок в batch",
+         "evaluate-batch проверяет local DB: если цель уже оценена — берёт из кеша, не тратит Gemini.\n"
+         "Только новые цели отправляются в AI. Повторный запуск за ~100ms вместо ~10s."),
+        (MID_BLUE, "🔄", "Дедупликация оценок",
+         "При повторной оценке старая запись удаляется (DELETE WHERE goal_id/goal_text).\n"
+         "В БД всегда одна оценка на цель — дашборд не искажается дублями."),
+        (ACCENT, "🔒", "Порог сохранения: smart_index ≥ 0.7",
+         "evaluate-goal — превью, не сохраняет в БД. Кнопка «Сохранить» активна только при ≥ 0.7.\n"
+         "Слабые цели не попадают в дашборд — только проходные."),
+        (rgb(0xF4,0x43,0x36), "🗑️", "Удаление manual-целей с низким скором",
+         "В пакетной оценке manual-цели с индексом < 0.7 показывают кнопку «Удалить».\n"
+         "DELETE /api/evaluation/{id} — карточка исчезает, БД очищается."),
+        (PURPLE, "⚡", "Параллельность + retry",
+         "asyncio.gather для batch (5 целей за ~8 сек). Gemini 429 retry: 2→5→10→20→40 сек.\n"
+         "Кеш сотрудников 5 мин (360ms → 62ms). Pool 10+10, pre_ping, recycle=3600."),
+    ]
+
+    for i, (color, icon, title, body) in enumerate(items):
+        ty = 1.6 + i * 1.12
+        rect(s, 0.3, ty, 12.73, 1.0, WHITE if i % 2 == 0 else rgb(0xF5,0xF8,0xFF))
+        rect(s, 0.3, ty, 0.12, 1.0, color)
+        txt(s, icon, 0.5, ty + 0.1, 0.5, 0.5, size=20)
+        txt(s, title, 1.1, ty + 0.08, 5.0, 0.35, size=13, bold=True, color=color)
+        txt(s, body,  1.1, ty + 0.42, 11.7, 0.55, size=10.5, color=TEXT)
+    pg(s, 12)
+s_optimizations()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# СЛАЙД 13 — ТИПЫ ЦЕЛЕЙ + СТРАТЕГИЧЕСКАЯ СВЯЗКА (бизнес)
 # ══════════════════════════════════════════════════════════════════════════════
 def s8b():
     s = prs.slides.add_slide(BLANK)
@@ -586,7 +624,7 @@ def s8b():
         txt(s, desc, 7.1, ty + 0.48, 5.6, 0.55, size=10, color=TEXT)
         txt(s, note, 7.1, ty + 1.1, 5.6, 0.4, size=10, color=color, italic=True)
 
-    pg(s, 12)
+    pg(s, 13)
 s8b()
 
 
@@ -652,7 +690,7 @@ def s9():
         ty = 4.56 + i * 0.38
         txt(s, f, 6.7,  ty, 2.5, 0.33, size=10, bold=True, color=GREEN, italic=True)
         txt(s, d, 9.25, ty, 3.6, 0.33, size=10, color=TEXT)
-    pg(s, 13)
+    pg(s, 14)
 s9()
 
 
@@ -725,7 +763,7 @@ def s10():
         size=11, bold=True, color=MID_BLUE, align=PP_ALIGN.CENTER)
     txt(s, "http://89.207.255.254:8001/docs", 10.2, 4.4, 2.8, 0.3,
         size=8, color=GRAY, align=PP_ALIGN.CENTER, italic=True)
-    pg(s, 14)
+    pg(s, 15)
 s10()
 
 
@@ -763,7 +801,7 @@ def s11():
         txt(s, func,     0.9,   ty+0.13, 3.9,  0.36, size=12, bold=True, color=DARK_BLUE)
         txt(s, endpoint, 5.0,   ty+0.13, 3.0,  0.36, size=11, color=MID_BLUE, italic=True)
         txt(s, detail,   8.2,   ty+0.13, 4.7,  0.36, size=11, color=TEXT)
-    pg(s, 15)
+    pg(s, 16)
 s11()
 
 
@@ -830,7 +868,7 @@ def s12():
     rect(s, 6.5, 5.9, 6.55, 0.38, ACCENT)
     txt(s, "🟡  Qdrant", 6.7, 5.95, 2.0, 0.28, size=11, bold=True, color=DARK_BLUE)
     txt(s, qdrant_items, 6.6, 6.37, 6.3, 0.7, size=10, color=TEXT)
-    pg(s, 16)
+    pg(s, 17)
 s12()
 
 
@@ -880,7 +918,7 @@ def s13():
         ty = 5.82 + row * 0.56
         txt(s, f"{icon}  {title}:", lx,     ty, 2.2,  0.44, size=11, bold=True, color=WHITE)
         txt(s, detail,              lx+2.2, ty, 4.2,  0.44, size=10.5, color=rgb(0xCC,0xDD,0xFF))
-    pg(s, 17)
+    pg(s, 18)
 s13()
 
 
@@ -918,7 +956,7 @@ def s14():
     txt(s, "Frontend: http://localhost:3000   ·   API: http://localhost:8001/docs",
         0.5, 6.9, 12.33, 0.38, size=12, color=rgb(0x99,0xBB,0xEE),
         align=PP_ALIGN.CENTER, italic=True)
-    pg(s, 18)
+    pg(s, 19)
 s14()
 
 

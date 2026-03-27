@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { TextField, MenuItem, Button, Typography, Box, CircularProgress, Card, CardContent, Chip, Stack, LinearProgress } from '@mui/material';
+import { TextField, MenuItem, Button, Typography, Box, CircularProgress, Card, CardContent, Chip, Stack, LinearProgress, IconButton, Snackbar, Alert } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 import api from '../api/client';
 import AlertBanner from '../components/AlertBanner';
@@ -34,6 +35,7 @@ export default function MyGoals() {
   const [error, setError] = useState('');
   const [touched, setTouched] = useState({});
   const [loadingEmp, setLoadingEmp] = useState(true);
+  const [snack, setSnack] = useState({ open: false, msg: '', severity: 'success' });
 
   useEffect(() => {
     api.get('/api/employees').then((r) => setEmployees(r.data)).catch(() => {}).finally(() => setLoadingEmp(false));
@@ -145,10 +147,32 @@ export default function MyGoals() {
               <CardContent>
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'flex-start' }, gap: 1 }}>
                   <Typography variant="body1" sx={{ flex: 1, fontSize: { xs: '0.85rem', md: '1rem' } }}>{g.goal_text}</Typography>
-                  <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0, flexWrap: 'wrap', gap: 0.5 }}>
+                  <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0, flexWrap: 'wrap', gap: 0.5, alignItems: 'center' }}>
                     <Chip label={g.overall_index.toFixed(2)} color={g.overall_index >= 0.7 ? 'success' : 'warning'} size="small" />
                     <Chip label={GOAL_TYPE_LABELS[g.goal_type] || g.goal_type} size="small" />
                     <Chip label={ALIGN_LABELS[g.alignment_level] || g.alignment_level} size="small" variant="outlined" />
+                    {g.goal_id?.startsWith('manual-') && g.overall_index < 0.7 && (
+                      <IconButton
+                        size="small"
+                        color="error"
+                        title="Удалить цель с низким SMART-индексом"
+                        onClick={async () => {
+                          const evalId = g.goal_id.replace('manual-', '');
+                          try {
+                            await api.delete(`/api/evaluation/${evalId}`);
+                            setResult(prev => ({
+                              ...prev,
+                              goals: prev.goals.filter(x => x.goal_id !== g.goal_id),
+                            }));
+                            setSnack({ open: true, msg: 'Цель удалена', severity: 'success' });
+                          } catch (e) {
+                            setSnack({ open: true, msg: 'Ошибка удаления', severity: 'error' });
+                          }
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    )}
                   </Stack>
                 </Box>
                 {g.smart_scores && (
@@ -172,6 +196,9 @@ export default function MyGoals() {
           ))}
         </>
       )}
+      <Snackbar open={snack.open} autoHideDuration={3000} onClose={() => setSnack(s => ({ ...s, open: false }))}>
+        <Alert severity={snack.severity} variant="filled">{snack.msg}</Alert>
+      </Snackbar>
     </Box>
   );
 }

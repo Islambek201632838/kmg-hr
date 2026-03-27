@@ -1,10 +1,12 @@
 import asyncio
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select, func
+from sqlalchemy import select, func, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_remote_session, get_local_session
 from app.models import Employee, Position, Department, Goal, KpiTimeseries, KpiCatalog, AiEvaluation
+from pydantic import BaseModel, Field
+from typing import Optional
 from app.schemas import EvalRequest, EvalResponse, SmartScores, BatchEvalRequest, BatchEvalResponse, GoalEval, BatchSummary, AlertItem
 from app.services.smart_evaluator import evaluate_goal
 from app.services.alert_manager import check_goal_alerts, check_batch_alerts
@@ -153,24 +155,11 @@ async def evaluate_goal_endpoint(
     )
     alerts = [AlertItem(**a) for a in raw_alerts]
 
-    # Save to local DB and get generated id
-    evaluation = AiEvaluation(
-        employee_id=req.employee_id,
-        goal_text=req.goal_text,
-        scores_json=smart_scores,
-        overall_index=smart_index,
-        goal_type=goal_type,
-        alignment_level=alignment_level,
-        alignment_source=result.get("strategic_alignment", {}).get("source"),
-        recommendations=result.get("recommendations", []),
-        reformulation=result.get("improved_goal"),
-    )
-    local.add(evaluation)
-    await local.commit()
-    await local.refresh(evaluation)
+    # evaluate-goal — превью-инструмент, НЕ сохраняем в БД
+    # (только evaluate-batch сохраняет реальные цели для дашборда)
 
     return EvalResponse(
-        goal_id=f"eval-{evaluation.id}",
+        goal_id=None,
         goal_text=req.goal_text,
         smart_scores=SmartScores(**smart_scores),
         smart_index=smart_index,
@@ -178,6 +167,81 @@ async def evaluate_goal_endpoint(
         improved_goal=result.get("improved_goal"),
         alerts=alerts,
     )
+
+
+class SaveEvalRequest(BaseModel):
+    employee_id: int = Field(..., description="ID сотрудника")
+    goal_text: str = Field(..., description="Формулировка цели")
+    smart_scores: SmartScores = Field(..., description="SMART-скоры")
+    smart_index: float = Field(..., description="SMART-индекс", ge=0, le=1)
+    goal_type: str = Field("output", description="Тип цели")
+    alignment_level: str = Field("operational", description="Уровень связки")
+    alignment_source: str = Field("", description="Источник связки")
+    recommendations: list[str] = Field([], description="Рекомендации")
+    improved_goal: Optional[str] = Field(None, description="Переформулировка")
+
+
+@router.post(
+    "/save-evaluation",
+    summary="Сохранить одобренную цель (smart_index >= 0.7)",
+    response_description="ID сохранённой оценки",
+)
+async def save_evaluation(
+    req: SaveEvalRequest,
+    local: AsyncSession = Depends(get_local_session),
+):
+    """
+    Сохраняет оценку цели в БД только если smart_index >= 0.7 (проходной порог).
+    Используется после превью через /evaluate-goal — сотрудник нажимает «Сохранить».
+    """
+    if req.smart_index < 0.7:
+        raise HTTPException(400, f"SMART-индекс ({req.smart_index:.2f}) ниже порога 0.7 — сохранение невозможно")
+
+    # Dedup: удалить старую оценку этой цели
+    await local.execute(
+        delete(AiEvaluation).where(
+            AiEvaluation.employee_id == req.employee_id,
+            AiEvaluation.goal_text == req.goal_text,
+        )
+    )
+
+    evaluation = AiEvaluation(
+        employee_id=req.employee_id,
+        goal_text=req.goal_text,
+        scores_json=req.smart_scores.model_dump(),
+        overall_index=req.smart_index,
+        goal_type=req.goal_type,
+        alignment_level=req.alignment_level,
+        alignment_source=req.alignment_source,
+        recommendations=req.recommendations,
+        reformulation=req.improved_goal,
+    )
+    local.add(evaluation)
+    await local.commit()
+    await local.refresh(evaluation)
+
+    return {"saved": True, "eval_id": evaluation.id, "smart_index": req.smart_index}
+
+
+@router.delete(
+    "/evaluation/{eval_id}",
+    summary="Удалить ручную оценку цели из локальной БД",
+)
+async def delete_evaluation(
+    eval_id: int,
+    local: AsyncSession = Depends(get_local_session),
+):
+    """Удаляет оценку по ID. Используется для удаления целей с низким SMART-индексом."""
+    result = await local.execute(
+        select(AiEvaluation).where(AiEvaluation.id == eval_id)
+    )
+    evaluation = result.scalar_one_or_none()
+    if not evaluation:
+        raise HTTPException(404, "Оценка не найдена")
+
+    await local.execute(delete(AiEvaluation).where(AiEvaluation.id == eval_id))
+    await local.commit()
+    return {"deleted": True, "eval_id": eval_id}
 
 
 @router.post(
@@ -225,18 +289,42 @@ async def evaluate_batch_endpoint(
             f"Цели за {req.quarter} {req.year} не найдены. Доступные периоды: {available}",
         )
 
-    # Evaluate all goals in parallel (было sequential — 5 целей × 5-8с = 25-40с)
-    results = await asyncio.gather(*[
-        evaluate_goal(
-            goal_text=goal.goal_text,
-            position=ctx["position"],
-            department=ctx["department"],
-            manager_goals=ctx["manager_goals"],
-            kpis=ctx["kpis"],
-        )
-        for goal in goals
-    ])
+    # 1. Check which goals already have AI evaluations in local DB
+    goal_ids = [str(g.goal_id) for g in goals]
+    existing_evals_result = await local.execute(
+        select(AiEvaluation).where(AiEvaluation.goal_id.in_(goal_ids))
+    )
+    existing_by_goal_id = {e.goal_id: e for e in existing_evals_result.scalars().all()}
 
+    # Also fetch manual evaluations (saved via save-evaluation, goal_id=NULL)
+    manual_evals_result = await local.execute(
+        select(AiEvaluation).where(
+            AiEvaluation.employee_id == req.employee_id,
+            AiEvaluation.goal_id.is_(None),
+        )
+    )
+    manual_evals = manual_evals_result.scalars().all()
+
+    # 2. Split: goals with existing eval (skip AI) vs new goals (need AI)
+    goals_to_evaluate = [g for g in goals if str(g.goal_id) not in existing_by_goal_id]
+
+    # 3. Evaluate only new goals in parallel
+    new_results = {}
+    if goals_to_evaluate:
+        ai_results = await asyncio.gather(*[
+            evaluate_goal(
+                goal_text=goal.goal_text,
+                position=ctx["position"],
+                department=ctx["department"],
+                manager_goals=ctx["manager_goals"],
+                kpis=ctx["kpis"],
+            )
+            for goal in goals_to_evaluate
+        ])
+        for goal, result in zip(goals_to_evaluate, ai_results):
+            new_results[str(goal.goal_id)] = result
+
+    # 4. Build response + save new evaluations
     evals = []
     db_records = []
     all_scores = {"specific": [], "measurable": [], "achievable": [], "relevant": [], "time_bound": []}
@@ -244,14 +332,38 @@ async def evaluate_batch_endpoint(
     activity_count = 0
     no_strategic_count = 0
 
-    for goal, result in zip(goals, results):
-        goal_type = result.get("goal_type", "output")
-        alignment_level = result.get("strategic_alignment", {}).get("level", "operational")
-        smart_scores = result["smart_scores"]
-        smart_index = result["smart_index"]
+    for goal in goals:
+        gid = str(goal.goal_id)
+        if gid in existing_by_goal_id:
+            # Use cached evaluation
+            e = existing_by_goal_id[gid]
+            smart_scores = e.scores_json
+            smart_index = e.overall_index
+            goal_type = e.goal_type or "output"
+            alignment_level = e.alignment_level or "operational"
+        else:
+            # Use fresh AI result
+            result = new_results[gid]
+            smart_scores = result["smart_scores"]
+            smart_index = result["smart_index"]
+            goal_type = result.get("goal_type", "output")
+            alignment_level = result.get("strategic_alignment", {}).get("level", "operational")
+
+            db_records.append(AiEvaluation(
+                goal_id=gid,
+                employee_id=req.employee_id,
+                goal_text=goal.goal_text,
+                scores_json=smart_scores,
+                overall_index=smart_index,
+                goal_type=goal_type,
+                alignment_level=alignment_level,
+                alignment_source=result.get("strategic_alignment", {}).get("source"),
+                recommendations=result.get("recommendations", []),
+                reformulation=result.get("improved_goal"),
+            ))
 
         evals.append(GoalEval(
-            goal_id=str(goal.goal_id),
+            goal_id=gid,
             goal_text=goal.goal_text,
             overall_index=smart_index,
             goal_type=goal_type,
@@ -260,7 +372,7 @@ async def evaluate_batch_endpoint(
         ))
 
         for key in all_scores:
-            all_scores[key].append(smart_scores[key])
+            all_scores[key].append(smart_scores.get(key, 0) if isinstance(smart_scores, dict) else getattr(smart_scores, key, 0))
 
         total_weight += float(goal.weight or 0)
         if goal_type == "activity":
@@ -268,30 +380,41 @@ async def evaluate_batch_endpoint(
         if alignment_level != "strategic":
             no_strategic_count += 1
 
-        db_records.append(AiEvaluation(
-            goal_id=str(goal.goal_id),
-            employee_id=req.employee_id,
-            goal_text=goal.goal_text,
-            scores_json=smart_scores,
-            overall_index=smart_index,
-            goal_type=goal_type,
-            alignment_level=alignment_level,
-            alignment_source=result.get("strategic_alignment", {}).get("source"),
-            recommendations=result.get("recommendations", []),
-            reformulation=result.get("improved_goal"),
+    # 5. Append manual evaluations (saved via /save-evaluation)
+    for me in manual_evals:
+        scores = me.scores_json or {}
+        evals.append(GoalEval(
+            goal_id=f"manual-{me.id}",
+            goal_text=me.goal_text,
+            overall_index=me.overall_index,
+            goal_type=me.goal_type or "output",
+            alignment_level=me.alignment_level or "operational",
+            smart_scores=SmartScores(**scores) if scores else None,
         ))
+        for key in all_scores:
+            all_scores[key].append(scores.get(key, 0))
+        if me.goal_type == "activity":
+            activity_count += 1
+        if (me.alignment_level or "operational") != "strategic":
+            no_strategic_count += 1
 
-    local.add_all(db_records)
-    await local.commit()
+    if db_records:
+        local.add_all(db_records)
+        await local.commit()
 
-    # Find weakest criterion
+    # 6. Summary
+    total_goals = len(evals)
+    if not evals:
+        raise HTTPException(404, "Нет целей для оценки")
+
     avg_per_criterion = {k: sum(v) / len(v) for k, v in all_scores.items() if v}
-    weakest = min(avg_per_criterion, key=avg_per_criterion.get)
+    weakest = min(avg_per_criterion, key=avg_per_criterion.get) if avg_per_criterion else "specific"
     avg_index = sum(e.overall_index for e in evals) / len(evals)
 
-    # Batch alerts
-    alerts = check_batch_alerts(len(goals), total_weight, avg_index, activity_count, no_strategic_count)
+    alerts = check_batch_alerts(total_goals, total_weight, avg_index, activity_count, no_strategic_count)
     warnings = [a["message"] for a in alerts]
+    if goals_to_evaluate:
+        warnings.insert(0, f"{len(goals_to_evaluate)} из {len(goals)} целей оценены AI (остальные из кеша)")
 
     return BatchEvalResponse(
         employee_name=ctx["employee"].full_name,
