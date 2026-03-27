@@ -1,4 +1,5 @@
 import json
+import asyncio
 import google.generativeai as genai
 from app.config import settings
 
@@ -91,15 +92,27 @@ async def evaluate_goal(
     )
 
     model = genai.GenerativeModel("gemini-2.0-flash")
-    response = await model.generate_content_async(
-        [
-            {"role": "user", "parts": [SYSTEM_PROMPT + "\n\n" + user_prompt]},
-        ],
-        generation_config=genai.GenerationConfig(
-            response_mime_type="application/json",
-            temperature=0.3,
-        ),
-    )
+
+    # Retry with exponential backoff on 429 (rate limit)
+    last_exc = None
+    for attempt in range(4):
+        try:
+            response = await model.generate_content_async(
+                [{"role": "user", "parts": [SYSTEM_PROMPT + "\n\n" + user_prompt]}],
+                generation_config=genai.GenerationConfig(
+                    response_mime_type="application/json",
+                    temperature=0.3,
+                ),
+            )
+            break
+        except Exception as e:
+            last_exc = e
+            if "429" in str(e) or "ResourceExhausted" in str(type(e).__name__):
+                await asyncio.sleep(1.5 ** attempt)
+            else:
+                return _fallback_result()
+    else:
+        return _fallback_result()
 
     text = response.text.strip()
     if text.startswith("```"):

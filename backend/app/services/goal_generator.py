@@ -1,6 +1,9 @@
 import json
 import asyncio
+import logging
 import google.generativeai as genai
+
+log = logging.getLogger(__name__)
 from app.config import settings
 from app.services.rag_pipeline import search_vnd
 from app.services.smart_evaluator import evaluate_goal, _ensure_configured
@@ -138,13 +141,25 @@ async def generate_goals(
     prompt = GENERATE_PROMPT.format(count=needed) + "\n\n" + context_text
 
     model = genai.GenerativeModel("gemini-2.0-flash")
-    response = await model.generate_content_async(
-        [{"role": "user", "parts": [prompt]}],
-        generation_config=genai.GenerationConfig(
-            response_mime_type="application/json",
-            temperature=0.5,
-        ),
-    )
+
+    for attempt in range(4):
+        try:
+            response = await model.generate_content_async(
+                [{"role": "user", "parts": [prompt]}],
+                generation_config=genai.GenerationConfig(
+                    response_mime_type="application/json",
+                    temperature=0.5,
+                ),
+            )
+            break
+        except Exception as e:
+            if "429" in str(e) or "ResourceExhausted" in str(type(e).__name__):
+                log.warning(f"Gemini 429, retry {attempt+1}/4")
+                await asyncio.sleep(1.5 ** attempt)
+            else:
+                return {"goals": [], "context": _empty_context(kpis, manager_goals, rag_chunks), "warnings": ["Ошибка Gemini. Попробуйте снова."]}
+    else:
+        return {"goals": [], "context": _empty_context(kpis, manager_goals, rag_chunks), "warnings": ["Gemini перегружен (429). Повторите через минуту."]}
 
     text = response.text.strip()
     if text.startswith("```"):
