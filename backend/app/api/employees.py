@@ -1,3 +1,4 @@
+import time
 from fastapi import APIRouter, Depends
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,11 +9,26 @@ from app.schemas import EmployeeShort
 
 router = APIRouter()
 
+# In-memory cache: {cache_key: (timestamp, data)}
+_cache: dict[str, tuple[float, list]] = {}
+CACHE_TTL = 300  # 5 minutes
+
+
+def _get_cached(key: str):
+    entry = _cache.get(key)
+    if entry and (time.time() - entry[0]) < CACHE_TTL:
+        return entry[1]
+    return None
+
+
+def _set_cached(key: str, data: list):
+    _cache[key] = (time.time(), data)
+
 
 @router.get(
     "/employees",
     response_model=list[EmployeeShort],
-    summary="Список активных сотрудников",
+    summary="Список активных сотрудников (кеш 5 мин)",
     response_description="ФИО, должность, подразделение, кол-во целей",
 )
 async def list_employees(
@@ -21,9 +37,13 @@ async def list_employees(
 ):
     """
     Возвращает всех активных сотрудников из корпоративной HR-системы.
-    Опциональная фильтрация по `department_id`.
-    Используется для выбора сотрудника во всех формах UI.
+    Результат кешируется на 5 минут (сбрасывается при перезапуске).
     """
+    cache_key = f"employees:{department_id or 'all'}"
+    cached = _get_cached(cache_key)
+    if cached is not None:
+        return cached
+
     q = (
         select(
             Employee.id,
@@ -44,9 +64,7 @@ async def list_employees(
         q = q.where(Employee.department_id == department_id)
 
     result = await session.execute(q)
-    rows = result.all()
-
-    return [
+    data = [
         EmployeeShort(
             id=r.id,
             full_name=r.full_name,
@@ -54,5 +72,8 @@ async def list_employees(
             department=r.department,
             goals_count=r.goals_count,
         )
-        for r in rows
+        for r in result.all()
     ]
+
+    _set_cached(cache_key, data)
+    return data
