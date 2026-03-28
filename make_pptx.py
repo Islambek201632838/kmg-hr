@@ -24,7 +24,7 @@ prs = Presentation()
 prs.slide_width  = Inches(13.33)
 prs.slide_height = Inches(7.5)
 BLANK = prs.slide_layouts[6]
-TOTAL = 21
+TOTAL = 10
 
 # ─── helpers ──────────────────────────────────────────────────────────────────
 def rect(slide, l, t, w, h, fill=DARK_BLUE):
@@ -162,8 +162,8 @@ def s3():
         lx = 0.55 + i * 4.2
         txt(s, who,  lx, 5.3,  3.8, 0.38, size=12, bold=True, color=MID_BLUE)
         txt(s, what, lx, 5.72, 3.9, 1.1,  size=11, color=TEXT)
-    pg(s, 3)
-s3()
+    pg(s, 0)
+#s3()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -208,7 +208,7 @@ def s4():
         if i < 2:
             txt(s, "→", lx+4.07, ty+2.6, 0.27, 0.5,
                 size=22, bold=True, color=ACCENT, align=PP_ALIGN.CENTER)
-    pg(s, 4)
+    pg(s, 3)
 s4()
 
 
@@ -282,8 +282,8 @@ def s5():
         size=11, bold=True, color=DARK_BLUE)
     txt(s, "Квартальный LineChart SMART-тренда\nRadarChart профиля по 5 критериям\nЗначок «слабый критерий» + стратег. связка",
         7.05, 5.0, 5.7, 1.6, size=11, color=TEXT)
-    pg(s, 5)
-s5()
+    pg(s, 0)
+#s5()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -320,7 +320,7 @@ def s6():
         add_rect(s, 1.45, ty, 11.55, 0.84, bg)
         txt(s, title,  1.62, ty+0.06, 4.5, 0.36, size=13, bold=True, color=color)
         txt(s, detail, 1.62, ty+0.44, 11.1, 0.38, size=10.5, color=TEXT)
-    pg(s, 6)
+    pg(s, 5)
 s6()
 
 
@@ -348,7 +348,7 @@ def s_qr():
         size=16, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
     txt(s, "Оценка целей · AI-генерация · Дашборд · Бенчмарк",
         0.5, 6.35, 12.33, 0.4, size=12, color=rgb(0xAA,0xCC,0xFF), align=PP_ALIGN.CENTER)
-    pg(s, 7)
+    pg(s, 4)
 s_qr()
 
 
@@ -383,8 +383,8 @@ def s_screens1():
             rect(s, lx, 1.55, 2.3, 4.2, rgb(0xDD,0xDD,0xDD))
         txt(s, title, lx, 5.85, 2.4, 0.4, size=10, bold=True, color=DARK_BLUE)
         txt(s, desc,  lx, 6.25, 2.4, 1.0, size=9, color=TEXT)
-    pg(s, 8)
-s_screens1()
+    pg(s, 0)
+#s_screens1()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -418,8 +418,8 @@ def s_screens2():
             rect(s, lx, 1.55, 2.3, 4.2, rgb(0xDD,0xDD,0xDD))
         txt(s, title, lx, 5.85, 2.4, 0.4, size=10, bold=True, color=DARK_BLUE)
         txt(s, desc,  lx, 6.25, 2.4, 1.0, size=9, color=TEXT)
-    pg(s, 9)
-s_screens2()
+    pg(s, 0)
+#s_screens2()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -461,8 +461,8 @@ def s7():
     rect(s, 0.3, 7.05, 12.73, 0.3, rgb(0x0D,0x1B,0x3E))
     txt(s, "🐳  local-db : 5433    qdrant : 6333    hr-api : 8001    hr-frontend : 3000",
         0.5, 7.06, 12.0, 0.25, size=11, color=rgb(0x99,0xCC,0xFF))
-    pg(s, 10)
-s7()
+    pg(s, 0)
+#s7()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -521,8 +521,8 @@ def s8():
 
     txt(s, "📦  evaluate-batch: asyncio.gather(*[evaluate_goal(...) for goal in goals])",
         0.35, 7.1, 12.5, 0.32, size=10.5, color=MID_BLUE, italic=True)
-    pg(s, 11)
-s8()
+    pg(s, 0)
+#s8()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -562,7 +562,7 @@ def s_optimizations():
         txt(s, icon, 0.5, ty + 0.1, 0.5, 0.5, size=20)
         txt(s, title, 1.1, ty + 0.08, 5.0, 0.35, size=13, bold=True, color=color)
         txt(s, body,  1.1, ty + 0.42, 11.7, 0.55, size=10.5, color=TEXT)
-    pg(s, 12)
+    pg(s, 6)
 s_optimizations()
 
 
@@ -614,8 +614,8 @@ def s_benchmark():
         txt(s, title, 7.05, ty, 5.8, 0.35, size=11, bold=True, color=color)
         txt(s, body, 7.05, ty + 0.38, 5.8, 0.7, size=10, color=TEXT)
 
-    pg(s, 13)
-s_benchmark()
+    pg(s, 0)
+#s_benchmark()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -679,8 +679,8 @@ def s8b():
         txt(s, desc, 7.1, ty + 0.48, 5.6, 0.55, size=10, color=TEXT)
         txt(s, note, 7.1, ty + 1.1, 5.6, 0.4, size=10, color=color, italic=True)
 
-    pg(s, 14)
-s8b()
+    pg(s, 0)
+#s8b()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -745,8 +745,8 @@ def s9():
         ty = 4.56 + i * 0.38
         txt(s, f, 6.7,  ty, 2.5, 0.33, size=10, bold=True, color=GREEN, italic=True)
         txt(s, d, 9.25, ty, 3.6, 0.33, size=10, color=TEXT)
-    pg(s, 15)
-s9()
+    pg(s, 0)
+#s9()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -808,17 +808,15 @@ def s10():
         txt(s, path, 1.22, ty+0.07, 4.7, 0.32, size=10.5, bold=True, color=MID_BLUE, italic=True)
         txt(s, desc, 6.15, ty+0.07, 6.9, 0.32, size=10.5, color=TEXT)
 
-    # QR code for Swagger docs
+    # QR code for Swagger docs (bottom-right, small)
     try:
         s.shapes.add_picture("screenshots/qr_docs.png",
-                             Inches(10.5), Inches(1.55), width=Inches(2.5), height=Inches(2.5))
+                             Inches(11.0), Inches(5.0), width=Inches(1.8), height=Inches(1.8))
     except Exception:
         pass
-    txt(s, "Swagger UI", 10.5, 4.1, 2.5, 0.3,
-        size=11, bold=True, color=MID_BLUE, align=PP_ALIGN.CENTER)
-    txt(s, "http://89.207.255.254:8001/docs", 10.2, 4.4, 2.8, 0.3,
-        size=8, color=GRAY, align=PP_ALIGN.CENTER, italic=True)
-    pg(s, 16)
+    txt(s, "Swagger /docs", 11.0, 6.85, 1.8, 0.25,
+        size=9, bold=True, color=MID_BLUE, align=PP_ALIGN.CENTER)
+    pg(s, 7)
 s10()
 
 
@@ -856,7 +854,7 @@ def s11():
         txt(s, func,     0.9,   ty+0.13, 3.9,  0.36, size=12, bold=True, color=DARK_BLUE)
         txt(s, endpoint, 5.0,   ty+0.13, 3.0,  0.36, size=11, color=MID_BLUE, italic=True)
         txt(s, detail,   8.2,   ty+0.13, 4.7,  0.36, size=11, color=TEXT)
-    pg(s, 17)
+    pg(s, 8)
 s11()
 
 
@@ -923,8 +921,8 @@ def s12():
     rect(s, 6.5, 5.9, 6.55, 0.38, ACCENT)
     txt(s, "🟡  Qdrant", 6.7, 5.95, 2.0, 0.28, size=11, bold=True, color=DARK_BLUE)
     txt(s, qdrant_items, 6.6, 6.37, 6.3, 0.7, size=10, color=TEXT)
-    pg(s, 18)
-s12()
+    pg(s, 0)
+#s12()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -973,8 +971,8 @@ def s13():
         ty = 5.82 + row * 0.56
         txt(s, f"{icon}  {title}:", lx,     ty, 2.2,  0.44, size=11, bold=True, color=WHITE)
         txt(s, detail,              lx+2.2, ty, 4.2,  0.44, size=10.5, color=rgb(0xCC,0xDD,0xFF))
-    pg(s, 19)
-s13()
+    pg(s, 0)
+#s13()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1009,17 +1007,17 @@ def s_roadmap():
         txt(s, title, lx + 0.75, ty + 0.18, 5.2, 0.38, size=14, bold=True, color=color)
         txt(s, body, lx + 0.2, ty + 0.65, 5.8, 1.7, size=11, color=TEXT)
 
-    pg(s, 20)
+    pg(s, 9)
 s_roadmap()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# СЛАЙД 21 — ИТОГ / СПАСИБО (последний)
+# СЛАЙД 10 — СПАСИБО
 # ══════════════════════════════════════════════════════════════════════════════
 def s14():
     s = prs.slides.add_slide(BLANK)
     rect(s, 0, 0, 13.33, 7.5, DARK_BLUE)
-    rect(s, 0, 5.2, 13.33, 0.12, ACCENT)
+    rect(s, 0, 5.8, 13.33, 0.12, ACCENT)
     rect(s, 0, 0, 0.18, 7.5, ACCENT)
 
     txt(s, "Спасибо за внимание", 0.5, 0.6, 12.33, 0.9,
@@ -1047,11 +1045,24 @@ def s14():
     txt(s, "Frontend: http://89.207.255.254:3000   ·   API: http://89.207.255.254:8001/docs",
         0.5, 6.9, 12.33, 0.38, size=12, color=rgb(0x99,0xBB,0xEE),
         align=PP_ALIGN.CENTER, italic=True)
-    pg(s, 21)
+    pg(s, 10)
 s14()
 
 
-# ─── SAVE ─────────────────────────────────────────────────────────────────────
+# ─── BUILD ────────────────────────────────────────────────────────────────────
+# 3-min pitch: 10 slides
+# 0:00-0:20  1. Title
+# 0:20-0:40  2. Problem (4 боли)
+# 0:40-1:00  3. Solution (3 шага для пользователя)
+# 1:00-1:10  4. QR Frontend → жюри открывает
+# 1:10-2:00  LIVE ДЕМО на телефонах жюри
+# 2:00-2:10  5. QR Swagger API docs
+# 2:10-2:30  6. MVP таблица (все ✅)
+# 2:30-2:40  7. Оптимизации (кеш, ACID, retry)
+# 2:40-2:50  8. Критерии хакатона (6 × покрыт)
+# 2:50-3:00  9. Roadmap → 10. Спасибо
+# ───────────────────────────────────────────────────────────────────────────────
+
 OUT = "KMG_HR_AI_Presentation.pptx"
 prs.save(OUT)
 print(f"✅  Saved: {OUT}  ({len(prs.slides)} slides)")
