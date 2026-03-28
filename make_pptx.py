@@ -24,7 +24,7 @@ prs = Presentation()
 prs.slide_width  = Inches(13.33)
 prs.slide_height = Inches(7.5)
 BLANK = prs.slide_layouts[6]
-TOTAL = 20
+TOTAL = 21
 
 # ─── helpers ──────────────────────────────────────────────────────────────────
 def rect(slide, l, t, w, h, fill=DARK_BLUE):
@@ -975,7 +975,43 @@ s13()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# СЛАЙД 17 — ИТОГ / СПАСИБО
+# СЛАЙД 20 — ROADMAP / РЕКОМЕНДАЦИИ
+# ══════════════════════════════════════════════════════════════════════════════
+def s_roadmap():
+    s = prs.slides.add_slide(BLANK)
+    rect(s, 0, 0, 13.33, 7.5, LIGHT)
+    header(s, "Roadmap — рекомендации по развитию",
+           "От MVP к production-решению для 10 000+ сотрудников")
+    accent_line(s)
+
+    items = [
+        (DARK_BLUE, "🔐", "Keycloak SSO + RBAC",
+         "SSO через Active Directory / Keycloak\nJWT-токены, роли: сотрудник / руководитель / HR\nУбрать выбор сотрудника — автоматически по логину"),
+        (PURPLE, "📄", "Парсинг реальных ВНД",
+         "Word (.docx) и PDF с таблицами, списками, OCR\nAdaptive chunking по заголовкам\nВерсионирование: автообновление Qdrant при изменении"),
+        (rgb(0xF4,0x43,0x36), "🖥️", "GPU-кластер / локальная LLM",
+         "ВНД = конфиденциальные данные, нельзя в облако\nvLLM + Llama 3 / Mistral на NVIDIA A100\nПолная автономность, без rate limits"),
+        (GREEN, "⚡", "Масштабирование",
+         "Kubernetes HPA + 3 реплики API\nRedis: rate limiting + кеш + Celery очередь\nGunicorn + N workers вместо 1 uvicorn"),
+    ]
+
+    for i, (color, icon, title, body) in enumerate(items):
+        col, row = i % 2, i // 2
+        lx = 0.3 + col * 6.52
+        ty = 1.55 + row * 2.8
+
+        rect(s, lx, ty, 6.22, 2.55, WHITE)
+        rect(s, lx, ty, 0.1, 2.55, color)
+        txt(s, icon, lx + 0.2, ty + 0.15, 0.5, 0.5, size=24)
+        txt(s, title, lx + 0.75, ty + 0.18, 5.2, 0.38, size=14, bold=True, color=color)
+        txt(s, body, lx + 0.2, ty + 0.65, 5.8, 1.7, size=11, color=TEXT)
+
+    pg(s, 20)
+s_roadmap()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# СЛАЙД 21 — ИТОГ / СПАСИБО (последний)
 # ══════════════════════════════════════════════════════════════════════════════
 def s14():
     s = prs.slides.add_slide(BLANK)
@@ -991,7 +1027,7 @@ def s14():
         ("🔍", "15%",        "RAG-пайплайн",                   "Qdrant · 160 ВНД · 412 чанков · cosine · source grounding"),
         ("📊", "10%",        "Аналитика и дашборд",             "Dept quality · quarterly trend · maturity F-22 · radar chart"),
         ("⚙️", "10%",        "Архитектура и API",               "FastAPI · OpenAPI /docs · Docker Compose · Alembic · Pydantic v2"),
-        ("💻", "15%",        "UX интерфейса",                   "React 18 · MUI · 4 страницы · progress bars · alert banners"),
+        ("💻", "15%",        "UX интерфейса",                   "React 18 · MUI · 6 страниц · progress bars · alert banners"),
     ]
 
     for i, (icon, weight, title, detail) in enumerate(summary):
@@ -1008,7 +1044,7 @@ def s14():
     txt(s, "Frontend: http://89.207.255.254:3000   ·   API: http://89.207.255.254:8001/docs",
         0.5, 6.9, 12.33, 0.38, size=12, color=rgb(0x99,0xBB,0xEE),
         align=PP_ALIGN.CENTER, italic=True)
-    pg(s, 20)
+    pg(s, 21)
 s14()
 
 
