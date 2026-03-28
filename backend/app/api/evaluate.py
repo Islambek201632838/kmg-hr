@@ -197,14 +197,19 @@ async def save_evaluation(
     if req.smart_index < 0.7:
         raise HTTPException(400, f"SMART-индекс ({req.smart_index:.2f}) ниже порога 0.7 — сохранение невозможно")
 
-    # Dedup: удалить старую оценку этой цели
+    # ACID: SELECT FOR UPDATE → DELETE → INSERT → single COMMIT
+    # Lock rows first to prevent race condition on concurrent saves
+    await local.execute(
+        select(AiEvaluation.id)
+        .where(AiEvaluation.employee_id == req.employee_id, AiEvaluation.goal_text == req.goal_text)
+        .with_for_update()
+    )
     await local.execute(
         delete(AiEvaluation).where(
             AiEvaluation.employee_id == req.employee_id,
             AiEvaluation.goal_text == req.goal_text,
         )
     )
-
     evaluation = AiEvaluation(
         employee_id=req.employee_id,
         goal_text=req.goal_text,
@@ -219,7 +224,6 @@ async def save_evaluation(
     local.add(evaluation)
     await local.commit()
     await local.refresh(evaluation)
-
     return {"saved": True, "eval_id": evaluation.id, "smart_index": req.smart_index}
 
 
@@ -233,12 +237,11 @@ async def delete_evaluation(
 ):
     """Удаляет оценку по ID. Используется для удаления целей с низким SMART-индексом."""
     result = await local.execute(
-        select(AiEvaluation).where(AiEvaluation.id == eval_id)
+        select(AiEvaluation).where(AiEvaluation.id == eval_id).with_for_update()
     )
     evaluation = result.scalar_one_or_none()
     if not evaluation:
         raise HTTPException(404, "Оценка не найдена")
-
     await local.execute(delete(AiEvaluation).where(AiEvaluation.id == eval_id))
     await local.commit()
     return {"deleted": True, "eval_id": eval_id}
@@ -398,7 +401,13 @@ async def evaluate_batch_endpoint(
         if (me.alignment_level or "operational") != "strategic":
             no_strategic_count += 1
 
+    # ACID: DELETE old + INSERT new in single transaction (one commit)
     if db_records:
+        new_goal_ids = [r.goal_id for r in db_records if r.goal_id]
+        if new_goal_ids:
+            await local.execute(
+                delete(AiEvaluation).where(AiEvaluation.goal_id.in_(new_goal_ids))
+            )
         local.add_all(db_records)
         await local.commit()
 
