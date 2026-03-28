@@ -550,10 +550,13 @@ def s_optimizations():
         (PURPLE, "⚡", "Параллельность + retry",
          "asyncio.gather для batch (5 целей за ~8 сек). Gemini 429 retry: 2→5→10→20→40 сек.\n"
          "Кеш сотрудников 5 мин (360ms → 62ms). Pool 10+10, pre_ping, recycle=3600."),
+        (TEAL, "🔐", "ACID-транзакции (race condition protection)",
+         "SELECT FOR UPDATE → DELETE → INSERT → один COMMIT. Второй параллельный запрос\n"
+         "ждёт на FOR UPDATE пока первый не закоммитит. Дубли и потеря данных невозможны."),
     ]
 
     for i, (color, icon, title, body) in enumerate(items):
-        ty = 1.6 + i * 1.12
+        ty = 1.6 + i * 0.95
         rect(s, 0.3, ty, 12.73, 1.0, WHITE if i % 2 == 0 else rgb(0xF5,0xF8,0xFF))
         rect(s, 0.3, ty, 0.12, 1.0, color)
         txt(s, icon, 0.5, ty + 0.1, 0.5, 0.5, size=20)
