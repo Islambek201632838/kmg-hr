@@ -128,9 +128,14 @@ async def generate_goals(
         query += f" {focus_area}"
     rag_chunks = await search_vnd(query, department_id=department_id, top_k=5)
 
-    # 2. Generate up to 5 goals (minus existing)
+    # 2. Generate goals to reach 3-5 total (per TZ F-16)
     existing_count = len(existing_goals)
-    needed = max(1, 5 - existing_count)
+    needed = max(0, 5 - existing_count)
+    if needed == 0:
+        return {"goals": [], "context": _empty_context(kpis, manager_goals, rag_chunks),
+                "warnings": [f"У сотрудника уже {existing_count} целей (максимум 5)"]}
+    needed = max(needed, 3 - existing_count)  # минимум до 3 всего
+    needed = max(1, min(5, needed))            # в диапазоне 1-5
 
     # 3. Build context and call Gemini (generation + self-scoring in 1 call)
     context_text = build_generation_context(
