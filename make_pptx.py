@@ -24,7 +24,7 @@ prs = Presentation()
 prs.slide_width  = Inches(13.33)
 prs.slide_height = Inches(7.5)
 BLANK = prs.slide_layouts[6]
-TOTAL = 10
+TOTAL = 8
 
 # ─── helpers ──────────────────────────────────────────────────────────────────
 def rect(slide, l, t, w, h, fill=DARK_BLUE):
@@ -209,7 +209,7 @@ def s4():
             txt(s, "→", lx+4.07, ty+2.6, 0.27, 0.5,
                 size=22, bold=True, color=ACCENT, align=PP_ALIGN.CENTER)
     pg(s, 3)
-s4()
+# s4()  # removed
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -299,11 +299,11 @@ def s6():
         (25, DARK_BLUE, "Качество оценки целей",
          "Gemini Flash · 5 SMART-скоров · goal_type · strategic_alignment\nF-20: история аналогичных ролей · F-17 стратег. связка"),
         (25, MID_BLUE,  "Качество генерации целей",
-         "RAG: 160 ВНД → 412 чанков в Qdrant · dedup cosine 0.85\nsource_doc + source_quote · auto-SMART validation + reformulation"),
+         "RAG: 160 ВНД → 211 чанков в Qdrant · dedup cosine 0.85\nsource_doc + source_quote · auto-SMART validation + reformulation"),
         (15, rgb(0x2E,0x7D,0x32), "UX интерфейса",
          "React 18 + MUI · SmartScoreCard progress-bars · GoalCard с цитатой ВНД\nAlertBanner · RadarChart · LineChart · collapsible RAG-чанки"),
         (15, PURPLE,    "Качество RAG-пайплайна",
-         "Qdrant cosine · paraphrase-MiniLM-L12-v2 (384d) · dept_scope filter\nsource grounding check · avg_rag_score отображается во фронте"),
+         "Qdrant cosine · gemini-embedding-001 (3072d) · dept_scope filter\nsource grounding check · avg_rag_score отображается во фронте"),
         (10, TEAL,      "Архитектура и API",
          "FastAPI + OpenAPI /docs · Pydantic v2 Field(description=...) · Alembic\nDocker Compose 4 services · async SQLAlchemy · 2 engines"),
         (10, ORANGE,    "Аналитика и дашборд",
@@ -440,7 +440,7 @@ def s7():
          "smart_evaluator.py — Gemini Flash JSON mode, 5 SMART-скоров, retry 429\ngoal_generator.py — RAG + LLM, rationale, auto-reformulation\nrag_pipeline.py — Qdrant search, dept filter, source grounding\nalert_manager.py — F-16..F-21 алерты · dedup_checker.py — cosine 0.85"),
         (rgb(0x2E,0x7D,0x32), "🗄️", "СЛОЙ 1 — ДАННЫЕ",
          "PostgreSQL 17 × 2 + Qdrant",
-         "Remote DB (readonly): 450 сотр., 9 000 целей, 160 ВНД, 13 KPI-метрик\nLocal DB (Alembic): ai_evaluations, ai_generated_goals, accepted_goals\nQdrant: 412 чанков, paraphrase-MiniLM-L12-v2, 384d cosine · dept_scope filter"),
+         "Remote DB (readonly): 450 сотр., 9 000 целей, 160 ВНД, 13 KPI-метрик\nLocal DB (Alembic): ai_evaluations, ai_generated_goals, accepted_goals\nQdrant: 211 чанков, gemini-embedding-001, 3072d cosine · dept_scope filter"),
     ]
 
     for i, (color, icon, tag, sub, body) in enumerate(layers):
@@ -690,7 +690,7 @@ def s9():
     s = prs.slides.add_slide(BLANK)
     rect(s, 0, 0, 13.33, 7.5, LIGHT)
     header(s, "RAG-пайплайн — техническая реализация",
-           "rag_pipeline.py  ·  Qdrant  ·  sentence-transformers  ·  source grounding")
+           "rag_pipeline.py  ·  Qdrant  ·  Gemini Embedding API  ·  source grounding")
     accent_line(s)
 
     # Pipeline top
@@ -716,11 +716,11 @@ def s9():
     txt(s, "Конфигурация Qdrant", 0.5, 4.06, 5.5, 0.32, size=12, bold=True, color=WHITE)
     qdrant_items = [
         ("Коллекция",      "vnd_documents"),
-        ("Модель",         "paraphrase-multilingual-MiniLM-L12-v2"),
-        ("Размерность",    "384d · метрика: cosine"),
+        ("Модель",         "gemini-embedding-001"),
+        ("Размерность",    "3072d · метрика: cosine"),
         ("Payload-поля",   "doc_title, doc_type, department_scope, text"),
         ("Фильтрация",     "department_scope == dept_id (с fallback)"),
-        ("Чанков",         "412 из 160 документов"),
+        ("Чанков",         "211 из 160 документов"),
     ]
     for i, (k, v) in enumerate(qdrant_items):
         ty = 4.56 + i * 0.43
@@ -855,7 +855,7 @@ def s11():
         txt(s, endpoint, 5.0,   ty+0.13, 3.0,  0.36, size=11, color=MID_BLUE, italic=True)
         txt(s, detail,   8.2,   ty+0.13, 4.7,  0.36, size=11, color=TEXT)
     pg(s, 8)
-s11()
+# s11()  # removed
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -872,7 +872,7 @@ def s12():
         (DARK_BLUE, "450",   "сотрудников"),
         (MID_BLUE,  "9 000", "целей в БД"),
         (GREEN,     "160",   "ВНД-документов"),
-        (PURPLE,    "412",   "векторных чанков"),
+        (PURPLE,    "211",   "векторных чанков"),
         (ORANGE,    "8",     "подразделений"),
         (TEAL,      "13",    "KPI-метрик"),
     ]
@@ -916,7 +916,7 @@ def s12():
         txt(s, tbl,    6.75, ty+0.06, 2.5, 0.36, size=11, bold=True, color=GREEN)
         txt(s, fields, 9.3,  ty+0.1,  3.3, 0.36, size=9.5, color=TEXT)
 
-    qdrant_items = "Qdrant:  collection=vnd_documents  ·  model=paraphrase-multilingual-MiniLM-L12-v2  ·  384d  ·  cosine  ·  412 chunks"
+    qdrant_items = "Qdrant:  collection=vnd_documents  ·  model=gemini-embedding-001  ·  3072d  ·  cosine  ·  211 chunks"
     rect(s, 6.5, 5.9, 6.55, 1.3, rgb(0xFF,0xF8,0xE1))
     rect(s, 6.5, 5.9, 6.55, 0.38, ACCENT)
     txt(s, "🟡  Qdrant", 6.7, 5.95, 2.0, 0.28, size=11, bold=True, color=DARK_BLUE)
@@ -1017,35 +1017,19 @@ s_roadmap()
 def s14():
     s = prs.slides.add_slide(BLANK)
     rect(s, 0, 0, 13.33, 7.5, DARK_BLUE)
-    rect(s, 0, 5.8, 13.33, 0.12, ACCENT)
+    rect(s, 0, 5.0, 13.33, 0.12, ACCENT)
     rect(s, 0, 0, 0.18, 7.5, ACCENT)
 
-    txt(s, "Спасибо за внимание", 0.5, 0.6, 12.33, 0.9,
-        size=40, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
+    txt(s, "Спасибо за внимание", 0.5, 1.5, 12.33, 1.2,
+        size=52, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
 
-    summary = [
-        ("🎯", "25% + 25%", "SMART-оценка + AI-генерация",   "Gemini Flash · 5 критериев · goal_type · strategic_alignment"),
-        ("🔍", "15%",        "RAG-пайплайн",                   "Qdrant · 160 ВНД · 412 чанков · cosine · source grounding"),
-        ("📊", "10%",        "Аналитика и дашборд",             "Dept quality · quarterly trend · maturity F-22 · radar chart"),
-        ("⚙️", "10%",        "Архитектура и API",               "FastAPI · OpenAPI /docs · Docker Compose · Alembic · Pydantic v2"),
-        ("💻", "15%",        "UX интерфейса",                   "React 18 · MUI · 6 страниц · progress bars · alert banners"),
-    ]
+    txt(s, "KMG HR AI — оценка и генерация целей сотрудников",
+        0.5, 3.0, 12.33, 0.6, size=18, color=ACCENT, align=PP_ALIGN.CENTER)
 
-    for i, (icon, weight, title, detail) in enumerate(summary):
-        lx = 0.35 + (i % 3) * 4.2
-        ty = 1.65 + (i // 3) * 2.1
-
-        rect(s, lx, ty, 3.9, 1.85, rgb(0x0D,0x1B,0x3E))
-        rect(s, lx, ty, 3.9, 0.08, ACCENT)
-
-        txt(s, icon + "  " + weight, lx+0.15, ty+0.15, 3.6, 0.42, size=13, bold=True, color=ACCENT)
-        txt(s, title,                lx+0.15, ty+0.56, 3.6, 0.38, size=12, bold=True, color=WHITE)
-        txt(s, detail,               lx+0.15, ty+0.96, 3.6, 0.76, size=10, color=rgb(0xAA,0xCC,0xFF))
-
-    txt(s, "Frontend: http://89.207.255.254:3000   ·   API: http://89.207.255.254:8001/docs",
-        0.5, 6.9, 12.33, 0.38, size=12, color=rgb(0x99,0xBB,0xEE),
-        align=PP_ALIGN.CENTER, italic=True)
-    pg(s, 10)
+    txt(s, "Frontend: http://89.207.255.254:3000\nAPI: http://89.207.255.254:8001/docs",
+        0.5, 5.5, 12.33, 0.8, size=14, color=rgb(0x99,0xBB,0xEE),
+        align=PP_ALIGN.CENTER)
+    pg(s, 8)
 s14()
 
 
