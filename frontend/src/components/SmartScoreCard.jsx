@@ -18,7 +18,12 @@ function scoreColor(score) {
 export default function SmartScoreCard({ evaluation }) {
   if (!evaluation) return null;
 
-  const { goal_text, smart_scores, smart_index, recommendations, improved_goal, alerts } = evaluation;
+  const { goal_text, smart_scores, smart_index, goal_type, strategic_alignment, recommendations, improved_goal, alerts } = evaluation;
+
+  const TYPE_LABELS = { activity: 'Activity / Активность', output: 'Output / Результат', impact: 'Impact / Влияние на бизнес' };
+  const ALIGN_LABELS = { strategic: 'Strategic / Стратегическая', functional: 'Functional / Функциональная', operational: 'Operational / Операционная' };
+  const TYPE_COLORS = { impact: 'success', output: 'primary', activity: 'error' };
+  const ALIGN_COLORS = { strategic: '#2e7d32', functional: '#1565c0', operational: '#c62828' };
 
   return (
     <Card variant="outlined" sx={{ mt: 2, borderLeft: `5px solid ${smart_index >= 0.7 ? '#4caf50' : smart_index >= 0.5 ? '#ff9800' : '#f44336'}` }}>
@@ -34,6 +39,23 @@ export default function SmartScoreCard({ evaluation }) {
             }}
           />
         </Box>
+
+        {/* Goal type + Strategic alignment */}
+        <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap', gap: 0.5 }}>
+          {goal_type && (
+            <Chip label={TYPE_LABELS[goal_type] || goal_type} color={TYPE_COLORS[goal_type] || 'default'} size="small" />
+          )}
+          {strategic_alignment && (
+            <Chip
+              label={ALIGN_LABELS[strategic_alignment.level] || strategic_alignment.level}
+              size="small" variant="outlined"
+              sx={{ borderColor: ALIGN_COLORS[strategic_alignment.level] || '#999', color: ALIGN_COLORS[strategic_alignment.level] || '#999' }}
+            />
+          )}
+          {strategic_alignment?.source && (
+            <Chip label={strategic_alignment.source} size="small" variant="outlined" sx={{ maxWidth: 400 }} />
+          )}
+        </Stack>
 
         {/* SMART scores */}
         {smart_scores && Object.entries(CRITERIA_LABELS).map(([key, label]) => {

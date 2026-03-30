@@ -103,6 +103,13 @@ async def evaluate_goal_endpoint(
     if not ctx:
         raise HTTPException(404, "Сотрудник не найден")
 
+    # RAG: fetch relevant VND chunks for strategic alignment context
+    from app.services.rag_pipeline import search_vnd
+    rag_chunks = await search_vnd(
+        f"{ctx['position']} {ctx['department']} {req.goal_text[:100]}",
+        department_id=ctx["department_id"], top_k=3,
+    )
+
     # Run Gemini + alert DB queries in parallel (Gemini ~3-5s, DB ~20ms)
     async def _gemini():
         return await evaluate_goal(
@@ -112,6 +119,7 @@ async def evaluate_goal_endpoint(
             manager_goals=ctx["manager_goals"],
             kpis=ctx["kpis"],
             historical_goals=ctx["historical_goals"],
+            rag_chunks=rag_chunks,
         )
 
     async def _alert_data():
@@ -158,11 +166,15 @@ async def evaluate_goal_endpoint(
     # evaluate-goal — превью-инструмент, НЕ сохраняем в БД
     # (только evaluate-batch сохраняет реальные цели для дашборда)
 
+    alignment = result.get("strategic_alignment", {})
+    from app.schemas import StrategicAlignment
     return EvalResponse(
         goal_id=None,
         goal_text=req.goal_text,
         smart_scores=SmartScores(**smart_scores),
         smart_index=smart_index,
+        goal_type=goal_type,
+        strategic_alignment=StrategicAlignment(**alignment) if alignment else None,
         recommendations=result.get("recommendations", []),
         improved_goal=result.get("improved_goal"),
         alerts=alerts,

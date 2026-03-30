@@ -15,8 +15,8 @@ GENERATE_PROMPT = """Ты HR-эксперт в нефтегазовой комп
 1. Быть привязана к конкретному ВНД-документу (укажи название и цитату)
 2. Иметь количественную метрику достижения
 3. Иметь конкретный дедлайн в рамках квартала
-4. Быть типа "output" или "impact" (НЕ "activity")
-5. Быть связана со стратегией компании или KPI подразделения
+4. goal_type ТОЛЬКО "impact" или "output". НИКОГДА не "activity". Impact предпочтительнее — цель должна влиять на бизнес-результат
+5. strategic_alignment.level ТОЛЬКО "strategic" или "functional". НИКОГДА не "operational". Каждая цель ДОЛЖНА быть привязана к KPI подразделения, стратегическому документу или цели руководителя. В source укажи конкретный KPI или документ
 6. Суммарный weight всех целей должен быть равен 100
 
 Для каждой цели выполни SMART-оценку (0.0-1.0 по каждому критерию):
@@ -41,10 +41,10 @@ GENERATE_PROMPT = """Ты HR-эксперт в нефтегазовой комп
       "weight": 20,
       "source_doc": "Название ВНД документа",
       "source_quote": "Конкретная цитата из документа",
-      "goal_type": "output",
+      "goal_type": "impact",
       "strategic_alignment": {{
         "level": "strategic",
-        "source": "Название KPI или стратегического приоритета"
+        "source": "KPI: сокращение операционных затрат на 10%"
       }},
       "smart_scores": {{
         "specific": 0.9,
@@ -128,9 +128,9 @@ async def generate_goals(
         query += f" {focus_area}"
     rag_chunks = await search_vnd(query, department_id=department_id, top_k=5)
 
-    # 2. Determine count
+    # 2. Generate up to 5 goals (minus existing)
     existing_count = len(existing_goals)
-    needed = max(3, min(5, 5 - existing_count))
+    needed = max(1, 5 - existing_count)
 
     # 3. Build context and call Gemini (generation + self-scoring in 1 call)
     context_text = build_generation_context(

@@ -48,7 +48,15 @@ docker compose exec hr-api alembic upgrade head
 docker compose exec hr-api python -m scripts.ingest_docs
 ```
 
-Загрузит 160 ВНД-документов из remote DB, нарежет на чанки, сделает эмбеддинги и положит в Qdrant.
+Загрузит 160 ВНД-документов из remote DB, нарежет на чанки, сделает эмбеддинги через **Gemini text-embedding-004** (768d) и положит в Qdrant.
+
+### 3.1. Переиндексация Qdrant (если нужно пересоздать)
+
+```bash
+docker compose exec hr-api python -m scripts.reset_qdrant
+```
+
+Удалит коллекцию и заново загрузит все ВНД с Gemini эмбеддингами. Занимает ~2-3 минуты.
 
 ### 4. Открыть
 

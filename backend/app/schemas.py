@@ -35,6 +35,8 @@ class EvalResponse(BaseModel):
     goal_text: str = Field(..., description="Оцениваемая формулировка цели")
     smart_scores: SmartScores = Field(..., description="Скоры по 5 критериям SMART (0.0–1.0)")
     smart_index: float = Field(..., description="Среднее арифметическое 5 SMART-скоров", ge=0, le=1)
+    goal_type: str = Field("output", description="Тип цели: activity / output / impact")
+    strategic_alignment: Optional[StrategicAlignment] = Field(None, description="Стратегическая связка: level + source")
     recommendations: list[str] = Field(..., description="Рекомендации по слабым критериям (S:/M:/A:/R:/T:)")
     improved_goal: Optional[str] = Field(None, description="Переформулировка в SMART, если smart_index < 0.7")
     alerts: list[AlertItem] = Field([], description="Системные алерты по F-16..F-21")

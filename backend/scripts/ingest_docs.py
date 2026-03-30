@@ -1,20 +1,22 @@
 """
-One-time script: load documents from remote PG -> chunk -> embed -> upsert to Qdrant.
+One-time script: load documents from remote PG -> chunk -> embed (Gemini API) -> upsert to Qdrant.
 Run: python -m scripts.ingest_docs
 """
 import uuid
+import time
 
 import psycopg2
+import google.generativeai as genai
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct, PayloadSchemaType
-from sentence_transformers import SentenceTransformer
 
 from app.config import settings
 
-CHUNK_SIZE = 512
-CHUNK_OVERLAP = 64
-VECTOR_SIZE = 384
+CHUNK_SIZE = 1024
+CHUNK_OVERLAP = 128
+VECTOR_SIZE = 3072  # Gemini gemini-embedding-001 dimension
+EMBED_BATCH = 20   # Gemini batch limit
 
 
 def fetch_documents():
@@ -60,14 +62,34 @@ def chunk_documents(rows):
     return chunks
 
 
+def _embed_one(text: str) -> list[float]:
+    result = genai.embed_content(
+        model="models/gemini-embedding-001",
+        content=text,
+        task_type="retrieval_document",
+    )
+    return result["embedding"]
+
+
 def embed_and_upsert(chunks):
-    """Embed chunks and upsert to Qdrant."""
-    print(f"Loading embedding model: {settings.embedding_model}")
-    model = SentenceTransformer(settings.embedding_model)
+    """Embed chunks via Gemini API (parallel) and upsert to Qdrant."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    genai.configure(api_key=settings.gemini_api_key)
 
     texts = [c["text"] for c in chunks]
-    print("Encoding chunks...")
-    vectors = model.encode(texts, show_progress_bar=True, batch_size=64)
+    print(f"Encoding {len(texts)} chunks via Gemini gemini-embedding-001 (parallel)...")
+
+    vectors = [None] * len(texts)
+    done = 0
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures = {pool.submit(_embed_one, t): i for i, t in enumerate(texts)}
+        for future in as_completed(futures):
+            idx = futures[future]
+            vectors[idx] = future.result()
+            done += 1
+            if done % 20 == 0 or done == len(texts):
+                print(f"  Embedded {done}/{len(texts)}")
 
     client = QdrantClient(url=settings.qdrant_url)
 
@@ -94,7 +116,7 @@ def embed_and_upsert(chunks):
         points = [
             PointStruct(
                 id=c["id"],
-                vector=v.tolist(),
+                vector=v,
                 payload={**c["metadata"], "text": c["text"]},
             )
             for c, v in zip(batch_chunks, batch_vectors)
